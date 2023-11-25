@@ -9,8 +9,6 @@
 #include "esphome/components/uart/uart.h"
 #include "nextion_base.h"
 #include "nextion_component.h"
-#include "esphome/components/display/display.h"
-#include "esphome/components/display/display_buffer.h"
 #include "esphome/components/display/display_color_utils.h"
 
 #ifdef USE_NEXTION_TFT_UPLOAD
@@ -37,7 +35,7 @@ using nextion_writer_t = std::function<void(Nextion &)>;
 
 static const std::string COMMAND_DELIMITER{static_cast<char>(255), static_cast<char>(255), static_cast<char>(255)};
 
-class Nextion : public NextionBase, public PollingComponent, public uart::UARTDevice, public display::DisplayBuffer {
+class Nextion : public NextionBase, public PollingComponent, public uart::UARTDevice {
  public:
   /**
    * Set the text of a component to a static string.
