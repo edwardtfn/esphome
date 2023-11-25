@@ -8,8 +8,6 @@ namespace nextion {
 class NextionDisplay;
 
 class NextionDisplay : public display::DisplayBuffer {
-
-class NextionDisplay : public display::DisplayBuffer {
  public:
   display::DisplayType get_display_type() override { return display::DisplayType::DISPLAY_TYPE_COLOR; }
 
