@@ -10,6 +10,7 @@
 #include "nextion_base.h"
 #include "nextion_component.h"
 #include "esphome/components/display/display.h"
+#include "esphome/components/display/display_buffer.h"
 #include "esphome/components/display/display_color_utils.h"
 
 #ifdef USE_NEXTION_TFT_UPLOAD
