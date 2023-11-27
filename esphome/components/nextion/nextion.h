@@ -3,6 +3,8 @@
 #include <deque>
 #include <vector>
 
+#include "esphome/core/application.h"
+
 #include "esphome/core/defines.h"
 #include "esphome/core/time.h"
 
