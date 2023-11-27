@@ -39,7 +39,7 @@ static const std::string COMMAND_DELIMITER{static_cast<char>(255), static_cast<c
 class Nextion : public NextionBase, public display::DisplayBuffer, public PollingComponent, public uart::UARTDevice {
  public:
   display::DisplayType get_display_type() override { return display::DisplayType::DISPLAY_TYPE_COLOR; }
-  void draw_pixel_at(int x, int y, Color color) override { Nextion::fill_area(x, y, 1, 1, color); }
+  void draw_pixel_at(int x, int y, Color color) override { this->fill_area(x, y, 1, 1, color); }
 
   /**
    * Set the text of a component to a static string.
