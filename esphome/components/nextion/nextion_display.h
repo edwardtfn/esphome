@@ -1,7 +1,7 @@
 #pragma once
 
 #include "esphome/components/display/display_buffer.h"
-
+#include "nextion.h"
 
 namespace esphome {
 namespace nextion {
