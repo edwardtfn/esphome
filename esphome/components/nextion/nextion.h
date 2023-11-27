@@ -776,8 +776,8 @@ class Nextion : public NextionBase, public display::DisplayBuffer, public Pollin
   void set_auto_wake_on_touch_internal(bool auto_wake_on_touch) { this->auto_wake_on_touch_ = auto_wake_on_touch; }
 
  protected:
-  int get_width_internal() override;
-  int get_height_internal() override;
+  int get_width_internal() override { return 480; }
+  int get_height_internal() override { return 320; }
   void draw_absolute_pixel_internal(int x, int y, Color color) override { this->fill_area(x, y, 1, 1, color); }
 
   std::deque<NextionQueue *> nextion_queue_;
