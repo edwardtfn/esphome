@@ -9,8 +9,8 @@
 #include "esphome/components/uart/uart.h"
 #include "nextion_base.h"
 #include "nextion_component.h"
-#include "nextion_display.h"
 #include "esphome/components/display/display_color_utils.h"
+#include "esphome/components/display/display_buffer.h"
 
 #ifdef USE_NEXTION_TFT_UPLOAD
 #ifdef ARDUINO
@@ -36,8 +36,11 @@ using nextion_writer_t = std::function<void(Nextion &)>;
 
 static const std::string COMMAND_DELIMITER{static_cast<char>(255), static_cast<char>(255), static_cast<char>(255)};
 
-class Nextion : public NextionBase, public NextionDisplay, public PollingComponent, public uart::UARTDevice {
+class Nextion : public NextionBase, public display::DisplayBuffer, public PollingComponent, public uart::UARTDevice {
  public:
+  display::DisplayType get_display_type() override { return display::DisplayType::DISPLAY_TYPE_COLOR; }
+  void draw_pixel_at(int x, int y, Color color) override { Nextion::fill_area(x, y, 1, 1, color); }
+
   /**
    * Set the text of a component to a static string.
    * @param component The component name.
@@ -773,6 +776,9 @@ class Nextion : public NextionBase, public NextionDisplay, public PollingCompone
   void set_auto_wake_on_touch_internal(bool auto_wake_on_touch) { this->auto_wake_on_touch_ = auto_wake_on_touch; }
 
  protected:
+  int get_width_internal() override;
+  int get_height_internal() override;
+
   std::deque<NextionQueue *> nextion_queue_;
   std::deque<NextionQueue *> waveform_queue_;
   uint16_t recv_ret_string_(std::string &response, uint32_t timeout, bool recv_flag);
