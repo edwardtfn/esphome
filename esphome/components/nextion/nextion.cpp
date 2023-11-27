@@ -2,7 +2,6 @@
 #include "esphome/core/util.h"
 #include "esphome/core/log.h"
 #include "esphome/core/application.h"
-#include "esphome/components/display/display_buffer.h"
 
 namespace esphome {
 namespace nextion {
