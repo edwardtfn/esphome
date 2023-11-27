@@ -778,7 +778,7 @@ class Nextion : public NextionBase, public display::DisplayBuffer, public Pollin
  protected:
   int get_width_internal() override;
   int get_height_internal() override;
-  display::DisplayBuffer::draw_absolute_pixel_internal(int x, int y, Color color) override { this->fill_area(x, y, 1, 1, color); }
+  void draw_absolute_pixel_internal(int x, int y, Color color) override { this->fill_area(x, y, 1, 1, color); }
 
   std::deque<NextionQueue *> nextion_queue_;
   std::deque<NextionQueue *> waveform_queue_;
