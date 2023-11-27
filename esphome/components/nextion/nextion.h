@@ -35,7 +35,7 @@ using nextion_writer_t = std::function<void(Nextion &)>;
 
 static const std::string COMMAND_DELIMITER{static_cast<char>(255), static_cast<char>(255), static_cast<char>(255)};
 
-class Nextion : public NextionBase, public PollingComponent, public uart::UARTDevice {
+class Nextion : public NextionBase, public PollingComponent, public uart::UARTDevice, public DisplayBuffer {
  public:
   /**
    * Set the text of a component to a static string.
