@@ -39,7 +39,11 @@ static const std::string COMMAND_DELIMITER{static_cast<char>(255), static_cast<c
 class Nextion : public NextionBase, public display::DisplayBuffer, public PollingComponent, public uart::UARTDevice {
  public:
   display::DisplayType get_display_type() override { return display::DisplayType::DISPLAY_TYPE_COLOR; }
-  void draw_pixel_at(int x, int y, Color color) override { this->fill_area(x, y, 1, 1, color); }
+  void draw_pixel_at(int x, int y, Color color) override {
+    this->fill_area(x, y, 1, 1, color);
+    delay(3);
+    App.feed_wdt();
+  }
 
   /**
    * Set the text of a component to a static string.
@@ -778,7 +782,11 @@ class Nextion : public NextionBase, public display::DisplayBuffer, public Pollin
  protected:
   int get_width_internal() override { return 480; }
   int get_height_internal() override { return 320; }
-  void draw_absolute_pixel_internal(int x, int y, Color color) override { this->fill_area(x, y, 1, 1, color); }
+  void draw_absolute_pixel_internal(int x, int y, Color color) override {
+    this->fill_area(x, y, 1, 1, color);
+    delay(3);
+    App.feed_wdt();
+  }
 
   std::deque<NextionQueue *> nextion_queue_;
   std::deque<NextionQueue *> waveform_queue_;
