@@ -40,6 +40,7 @@ class Nextion : public NextionBase, public display::DisplayBuffer, public Pollin
  public:
   display::DisplayType get_display_type() override { return display::DisplayType::DISPLAY_TYPE_COLOR; }
   void draw_pixel_at(int x, int y, Color color) override { this->fill_area(x, y, 1, 1, color); }
+  display::DisplayBuffer::draw_absolute_pixel_internal(int x, int y, Color color) override { this->fill_area(x, y, 1, 1, color); }
 
   /**
    * Set the text of a component to a static string.
