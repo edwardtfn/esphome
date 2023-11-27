@@ -7,7 +7,7 @@ namespace esphome {
 namespace nextion {
 class NextionDisplay;
 
-class NextionDisplay : public display::DisplayBuffer {
+class NextionDisplay : public Nextion, public display::DisplayBuffer {
  public:
   display::DisplayType get_display_type() override { return display::DisplayType::DISPLAY_TYPE_COLOR; }
   void draw_pixel_at(int x, int y, Color color) override { Nextion::fill_area(x, y, 1, 1, color); }
