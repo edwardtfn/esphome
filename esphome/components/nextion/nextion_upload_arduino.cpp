@@ -100,7 +100,7 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
     fetched += c;
   }
   http->end();
-  ESP_LOGN(TAG, "Fetched %d of %d bytes", fetched, this->content_length_);
+  ESP_LOGVV(TAG, "Fetched %d of %d bytes", fetched, this->content_length_);
 
   // upload fetched segments to the display in 4KB chunks
   int write_len;

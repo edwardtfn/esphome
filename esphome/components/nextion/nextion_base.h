@@ -11,12 +11,12 @@ namespace nextion {
 
 #ifdef NEXTION_PROTOCOL_LOG
 #ifdef ESPHOME_LOG_HAS_VERY_VERBOSE
-#define ESP_LOGN(tag, ...) ESP_LOGVV(tag, __VA_ARGS__)
+#define ESP_LOGVV(tag, ...) ESP_LOGVV(tag, __VA_ARGS__)
 #else
-#define ESP_LOGN(tag, ...) ESP_LOGD(tag, __VA_ARGS__)
+#define ESP_LOGVV(tag, ...) ESP_LOGD(tag, __VA_ARGS__)
 #endif
 #else
-#define ESP_LOGN(tag, ...) \
+#define ESP_LOGVV(tag, ...) \
   {}
 #endif
 
