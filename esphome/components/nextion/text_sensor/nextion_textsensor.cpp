@@ -42,7 +42,7 @@ void NextionTextSensor::set_state(const std::string &state, bool publish, bool s
 
   this->update_component_settings();
 
-  ESP_LOGN(TAG, "Wrote state for text_sensor \"%s\" state \"%s\"", this->variable_name_.c_str(), state.c_str());
+  ESP_LOGVV(TAG, "Wrote state for text_sensor \"%s\" state \"%s\"", this->variable_name_.c_str(), state.c_str());
 }
 
 }  // namespace nextion

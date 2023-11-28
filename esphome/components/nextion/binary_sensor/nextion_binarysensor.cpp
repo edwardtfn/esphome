@@ -61,7 +61,7 @@ void NextionBinarySensor::set_state(bool state, bool publish, bool send_to_nexti
 
   this->update_component_settings();
 
-  ESP_LOGN(TAG, "Wrote state for sensor \"%s\" state %s", this->variable_name_.c_str(),
+  ESP_LOGVV(TAG, "Wrote state for sensor \"%s\" state %s", this->variable_name_.c_str(),
            ONOFF(this->variable_name_.c_str()));
 }
 

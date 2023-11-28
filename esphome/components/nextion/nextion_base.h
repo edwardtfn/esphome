@@ -9,17 +9,6 @@ namespace nextion {
 #define NEXTION_PROTOCOL_LOG
 #endif
 
-#ifdef NEXTION_PROTOCOL_LOG
-#ifdef ESPHOME_LOG_HAS_VERY_VERBOSE
-#define ESP_LOGVV(tag, ...) ESP_LOGVV(tag, __VA_ARGS__)
-#else
-#define ESP_LOGVV(tag, ...) ESP_LOGD(tag, __VA_ARGS__)
-#endif
-#else
-#define ESP_LOGVV(tag, ...) \
-  {}
-#endif
-
 class NextionBase;
 
 class NextionBase {
