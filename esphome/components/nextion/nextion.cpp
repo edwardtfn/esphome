@@ -111,11 +111,11 @@ bool Nextion::check_connect_() {
 }
 
 void Nextion::reset_(bool reset_nextion) {
-  uint8_t d;
+  //uint8_t d;
 
-  while (this->available()) {  // Clear receive buffer
-    this->read_byte(&d);
-  };
+  //while (this->available()) {  // Clear receive buffer
+  //  this->read_byte(&d);
+  //};
   this->nextion_queue_.clear();
   this->waveform_queue_.clear();
 }
