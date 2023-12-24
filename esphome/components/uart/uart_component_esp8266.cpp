@@ -100,7 +100,7 @@ void ESP8266UartComponent::setup() {
 
 void ESP8266UartComponent::load_settings(bool dump_config) {
   if (this->hw_serial_ != nullptr) {
-    this->hw_serial_->begin(this->baud_rate_, this->get_config());
+    this->hw_serial_->begin(this->baud_rate_, static_cast<SerialConfig>(this->get_config()));
     this->hw_serial_->setRxBufferSize(this->rx_buffer_size_);
   }
   this->sw_serial_->setup(tx_pin_, rx_pin_, this->baud_rate_, this->stop_bits_, this->data_bits_, this->parity_,
