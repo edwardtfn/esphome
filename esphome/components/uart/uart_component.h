@@ -122,7 +122,7 @@ class UARTComponent {
   // @return Baud rate in bits per second.
   uint32_t get_baud_rate() const { return baud_rate_; }
 
-#ifdef USE_ESP32
+#ifdef USE_ESP
   /**
    * Load the UART settings.
    * @param dump_config If true (default), output the new settings to logs; otherwise, change settings quietly.
@@ -147,7 +147,7 @@ class UARTComponent {
    * This will load the current UART interface with the latest settings (baud_rate, parity, etc).
    */
   virtual void load_settings(){};
-#endif  // USE_ESP32
+#endif  // USE_ESP
 
 #ifdef USE_UART_DEBUGGER
   void add_debug_callback(std::function<void(UARTDirection, uint8_t)> &&callback) {
