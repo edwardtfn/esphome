@@ -79,7 +79,7 @@ int Nextion::upload_range(const std::string &url, int range_start) {
           }
           free(location_header); // Free the allocated memory
       }
-  } else if (status_code != 200) {
+  } else if (status_code != 200 and status_code != 206) {
       ESP_LOGE(TAG, "Unexpected HTTP status code: %d", status_code);
       esp_http_client_cleanup(client);
       return -1;
@@ -315,10 +315,10 @@ bool Nextion::upload_tft() {
 
 bool Nextion::upload_end(bool successful) {
   this->is_updating_ = false;
-  ESP_LOGD(TAG, "Restarting Nextion");
-  this->soft_reset();
-  vTaskDelay(pdMS_TO_TICKS(1500));  // NOLINT
   if (successful) {
+    ESP_LOGD(TAG, "Restarting Nextion");
+    this->soft_reset();
+    vTaskDelay(pdMS_TO_TICKS(1500));  // NOLINT
     ESP_LOGD(TAG, "Restarting esphome");
     esp_restart();  // NOLINT(readability-static-accessed-through-instance)
   }
