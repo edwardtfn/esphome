@@ -178,9 +178,9 @@ bool Nextion::upload_tft() {
   esp_http_client_config_t config = {
       .url = this->tft_url_.c_str(),
       .cert_pem = nullptr,
-      .disable_auto_redirect = false,
       .method = HTTP_METHOD_HEAD,
       .timeout_ms = 15000,
+      .disable_auto_redirect = false,
   };
 
   // Initialize the HTTP client with the configuration
