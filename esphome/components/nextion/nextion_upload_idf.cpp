@@ -63,9 +63,8 @@ int Nextion::upload_range(const std::string &url, int range_start) {
   if (status_code == 301 || status_code == 302) {
     ESP_LOGV(TAG, "Handling HTTP redirection");
     char *location_header = nullptr;
-    esp_http_client_get_header(client, "Location", &location_header);
-    ESP_LOGV(TAG, "HTTP status code: %s", location_header);
-    if (location_header != nullptr) {
+    esp_err_t header_result = esp_http_client_get_header(client, "Location", &location_header);
+    if (header_result == ESP_OK && location_header != nullptr) {
       ESP_LOGD(TAG, "Redirected to: %s", location_header);
 
       // Clean up the current client
@@ -93,7 +92,7 @@ int Nextion::upload_range(const std::string &url, int range_start) {
       ESP_LOGV(TAG, "HTTP status code: %d", status_code);
       free(location_header); // Free the allocated memory
     } else {
-      ESP_LOGE(TAG, "Failed to get location header for redirection");
+      ESP_LOGE(TAG, "Failed to get location header for redirection: %s", esp_err_to_name(header_result));
       return -1;
     }
   }
