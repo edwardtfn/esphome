@@ -178,10 +178,10 @@ bool Nextion::upload_tft() {
 
   // Handle redirection
   if (status_code >= 300 && status_code < 400) {
-    char location_header[300] = {0};
-    esp_http_client_get_header(http, "Location", location_header, sizeof(location_header));
+    char *location_header = nullptr;
+    esp_http_client_get_header(http, "Location", &location_header);
 
-    if (strlen(location_header) > 0) {
+    if (location_header != nullptr) {
       ESP_LOGD(TAG, "Redirected to: %s", location_header);
       esp_http_client_cleanup(http);  // Clean up the current client
 
@@ -198,9 +198,12 @@ bool Nextion::upload_tft() {
       err = esp_http_client_perform(http);
       if (err != ESP_OK) {
         ESP_LOGE(TAG, "Redirected HTTP request failed: %s", esp_err_to_name(err));
+        free(location_header);  // Free the allocated memory
         esp_http_client_cleanup(http);
         return this->upload_end(false);
       }
+
+      free(location_header);  // Free the allocated memory after using it
     }
   }
 
