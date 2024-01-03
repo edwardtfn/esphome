@@ -37,6 +37,7 @@ int Nextion::upload_range(const std::string &url, int range_start) {
   esp_http_client_config_t config = {
       .url = url.c_str(),
       .cert_pem = nullptr,
+      .disable_auto_redirect = false,
   };
   esp_http_client_handle_t client = esp_http_client_init(&config);
 
@@ -62,39 +63,20 @@ int Nextion::upload_range(const std::string &url, int range_start) {
   // Handle redirection
   if (status_code == 301 || status_code == 302) {
     ESP_LOGV(TAG, "Handling HTTP redirection");
-    char *location_header = nullptr;
-    esp_err_t header_result = esp_http_client_get_header(client, "Location", &location_header);
-    if (header_result == ESP_OK && location_header != nullptr) {
-      ESP_LOGD(TAG, "Redirected to: %s", location_header);
 
-      // Clean up the current client
-      ESP_LOGV(TAG, "Reinitialize the client with the new URL");
-      esp_http_client_cleanup(client);
-
-      // Reinitialize the client with the new URL
-      ESP_LOGV(TAG, "Reinitialize the client with the new URL");
-      config.url = location_header;
-      client = esp_http_client_init(&config);
-
-      // Open the connection again with the new URL
-      ESP_LOGV(TAG, "Open the connection again with the new URL");
-      if (esp_http_client_open(client, 0) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to open redirected HTTP connection");
-        free(location_header);
+    esp_err_t redirection_result = esp_http_client_set_redirection(client);
+    ESP_LOGV(TAG, "Redirection result: %s", esp_err_to_name(redirection_result));
+    if (redirection_result != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to handle redirection: %s", esp_err_to_name(redirection_result));
+        esp_http_client_cleanup(client);
         return -1;
-      }
-
-      // Fetch headers again
-      ESP_LOGV(TAG, "Fetch headers again");
-      content_length = esp_http_client_fetch_headers(client);
-      ESP_LOGV(TAG, "Content length: %d", content_length);
-      status_code = esp_http_client_get_status_code(client);
-      ESP_LOGV(TAG, "HTTP status code: %d", status_code);
-      free(location_header); // Free the allocated memory
-    } else {
-      ESP_LOGE(TAG, "Failed to get location header for redirection: %s", esp_err_to_name(header_result));
-      return -1;
     }
+    // Fetch headers again
+    ESP_LOGV(TAG, "Fetch headers again");
+    content_length = esp_http_client_fetch_headers(client);
+    ESP_LOGV(TAG, "Content length: %d", content_length);
+    status_code = esp_http_client_get_status_code(client);
+    ESP_LOGV(TAG, "HTTP status code: %d", status_code);
   }
 
   if (status_code != 200 and status_code != 206) {
@@ -196,6 +178,7 @@ bool Nextion::upload_tft() {
   esp_http_client_config_t config = {
       .url = this->tft_url_.c_str(),
       .cert_pem = nullptr,
+      .disable_auto_redirect = false,
       .method = HTTP_METHOD_HEAD,
       .timeout_ms = 15000,
   };
