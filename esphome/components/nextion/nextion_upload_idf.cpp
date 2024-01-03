@@ -61,33 +61,54 @@ int Nextion::upload_range(const std::string &url, int range_start) {
   int status_code = esp_http_client_get_status_code(client);
 
   if (status_code == 301 || status_code == 302) {
-    char location_header[300] = {0};  // Adjust size as needed
-    esp_http_client_get_header(client, "Location", location_header, sizeof(location_header));
+    char* location_header = nullptr;
+    int max_header_len = 300;
+    location_header = (char*) malloc(max_header_len * sizeof(char));
 
-    if (strlen(location_header) > 0) {
-      ESP_LOGD(TAG, "Redirected to: %s", location_header);
-      esp_http_client_cleanup(client);  // Clean up the current client
-
-      // Reinitialize the client with the new URL
-      esp_http_client_config_t redirect_config = {
-        .url = location_header,
-        .cert_pem = nullptr, // if your connection is HTTPS
-      };
-      client = esp_http_client_init(&redirect_config);
-
-      // Open the connection again with the new URL
-      if ((err = esp_http_client_open(client, 0)) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to open redirected HTTP connection: %s", esp_err_to_name(err));
-        esp_http_client_cleanup(client);
-        return -1;
-      }
-
-      // Fetch headers again
-      ESP_LOGV(TAG, "Fetch content length from new location");
-      content_length = esp_http_client_fetch_headers(client);
-      ESP_LOGV(TAG, "content_length = %d", content_length);
+    if (location_header == nullptr) {
+      ESP_LOGE(TAG, "Failed to allocate memory for location header");
+      esp_http_client_cleanup(client);
+      return -1;
     }
-  } else if (content_length <= 0) {
+
+    memset(location_header, 0, max_header_len);
+    
+    if (esp_http_client_get_header(client, "Location", &location_header) == ESP_OK) {
+      if (strlen(location_header) > 0) {
+        ESP_LOGD(TAG, "Redirected to: %s", location_header);
+
+        // Reinitialize the client with the new URL
+        esp_http_client_config_t redirect_config = {
+          .url = location_header,
+          .cert_pem = nullptr, // if your connection is HTTPS
+        };
+        client = esp_http_client_init(&redirect_config);
+
+        // Open the connection again with the new URL
+        if ((err = esp_http_client_open(client, 0)) != ESP_OK) {
+          ESP_LOGE(TAG, "Failed to open redirected HTTP connection: %s", esp_err_to_name(err));
+          esp_http_client_cleanup(client);
+          return -1;
+        }
+
+        // Fetch headers again
+        ESP_LOGV(TAG, "Fetch content length from new location");
+        content_length = esp_http_client_fetch_headers(client);
+        ESP_LOGV(TAG, "content_length = %d", content_length);
+
+        free(location_header);  // Free the allocated memory after using it
+      }
+    } else {
+      free(location_header);  // Ensure to free the memory in case of failure
+    }
+  } else if (status_code != 200) {
+      ESP_LOGE(TAG, "Unexpected HTTP status code: %d", status_code);
+      esp_http_client_cleanup(client);
+      return -1;
+  }
+
+  // Check content_length
+  if (content_length <= 0) {
     ESP_LOGE(TAG, "Failed to get content length: %d", content_length);
     esp_http_client_cleanup(client);
     return -1;
