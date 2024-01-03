@@ -46,53 +46,55 @@ int Nextion::upload_range(const std::string &url, int range_start) {
   esp_http_client_set_header(client, "Range", range_header);
   ESP_LOGVV(TAG, "Available heap: %u", esp_get_free_heap_size());
 
-  ESP_LOGV(TAG, "Opening http connetion");
-  esp_err_t err;
-  if ((err = esp_http_client_open(client, 0)) != ESP_OK) {
-    ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
-    esp_http_client_cleanup(client);
-    return -1;
+  ESP_LOGV(TAG, "Opening http connection");
+  esp_err_t err = esp_http_client_open(client, 0);
+  if (err != ESP_OK) {
+      ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
+      esp_http_client_cleanup(client);
+      return -1;
   }
-  
+
   int content_length = esp_http_client_fetch_headers(client);
+  ESP_LOGV(TAG, "Content length: %d", content_length);
   int status_code = esp_http_client_get_status_code(client);
   ESP_LOGV(TAG, "HTTP status code: %d", status_code);
 
   // Handle redirection
-  if (status_code >= 300 && status_code < 400) {
+  if (status_code == 301 || status_code == 302) {
     ESP_LOGV(TAG, "Handling HTTP redirection");
     char *location_header = nullptr;
     esp_http_client_get_header(client, "Location", &location_header);
-    ESP_LOGV(TAG, "Location header: %s", location_header);
-
-    if (location_header != nullptr) {
+    if (location_header) {
       ESP_LOGD(TAG, "Redirected to: %s", location_header);
-      esp_http_client_cleanup(client);  // Clean up the current client
 
-      // Set up a new client for the redirected URL
-      esp_http_client_config_t redirect_config = {
-        .url = location_header,
-        .cert_pem = nullptr,
-        .method = HTTP_METHOD_HEAD,
-        .timeout_ms = 15000,
-      };
-      client = esp_http_client_init(&redirect_config);
+      // Clean up the current client
+      ESP_LOGV(TAG, "Reinitialize the client with the new URL");
+      esp_http_client_cleanup(client);
 
-      // Perform the new request
-      ESP_LOGV(TAG, "Performing new request");
-      err = esp_http_client_perform(client);
-      if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Redirected HTTP request failed: %s", esp_err_to_name(err));
-        free(location_header);  // Free the allocated memory
-        esp_http_client_cleanup(client);
+      // Reinitialize the client with the new URL
+      ESP_LOGV(TAG, "Reinitialize the client with the new URL");
+      config.url = location_header;
+      client = esp_http_client_init(&config);
+
+      // Open the connection again with the new URL
+      ESP_LOGV(TAG, "Open the connection again with the new URL");
+      if (esp_http_client_open(client, 0) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open redirected HTTP connection");
+        free(location_header);
         return -1;
       }
 
-      free(location_header);  // Free the allocated memory after using it
+      // Fetch headers again
+      ESP_LOGV(TAG, "Fetch headers again");
+      content_length = esp_http_client_fetch_headers(client);
+      ESP_LOGV(TAG, "Content length: %d", content_length);
+      status_code = esp_http_client_get_status_code(client);
+      ESP_LOGV(TAG, "HTTP status code: %d", status_code);
+      free(location_header); // Free the allocated memory
+    } else {
+      ESP_LOGE(TAG, "Failed to get location header for redirection");
+      return -1;
     }
-    content_length = esp_http_client_fetch_headers(client);
-    status_code = esp_http_client_get_status_code(client);
-    ESP_LOGV(TAG, "HTTP status code: %d", status_code);
   }
 
   if (status_code != 200 and status_code != 206) {
