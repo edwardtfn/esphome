@@ -67,7 +67,7 @@ int Nextion::upload_range(const std::string &url, int range_start) {
 
     if (location_header != nullptr) {
       ESP_LOGD(TAG, "Redirected to: %s", location_header);
-      esp_http_client_cleanup(http);  // Clean up the current client
+      esp_http_client_cleanup(client);  // Clean up the current client
 
       // Set up a new client for the redirected URL
       esp_http_client_config_t redirect_config = {
@@ -80,11 +80,11 @@ int Nextion::upload_range(const std::string &url, int range_start) {
 
       // Perform the new request
       ESP_LOGV(TAG, "Performing new request");
-      err = esp_http_client_perform(http);
+      err = esp_http_client_perform(client);
       if (err != ESP_OK) {
         ESP_LOGE(TAG, "Redirected HTTP request failed: %s", esp_err_to_name(err));
         free(location_header);  // Free the allocated memory
-        esp_http_client_cleanup(http);
+        esp_http_client_cleanup(client);
         return -1;
       }
 
