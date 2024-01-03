@@ -63,7 +63,7 @@ int Nextion::upload_range(const std::string &url, int range_start) {
     ESP_LOGV(TAG, "Handling HTTP redirection");
     char *location_header = nullptr;
     esp_http_client_get_header(client, "Location", &location_header);
-    ESP_LOGV(TAG, "Location header: %s", location_header.c_str());
+    ESP_LOGV(TAG, "Location header: %s", location_header);
 
     if (location_header != nullptr) {
       ESP_LOGD(TAG, "Redirected to: %s", location_header);
