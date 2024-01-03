@@ -64,7 +64,7 @@ int Nextion::upload_range(const std::string &url, int range_start) {
   if (status_code == 301 || status_code == 302) {
     ESP_LOGV(TAG, "Handling HTTP redirection");
 
-    esp_err_t redirection_result = esp_http_client_set_url(client, client->location);
+    esp_err_t redirection_result = esp_http_client_set_redirection(client);
     ESP_LOGV(TAG, "Redirection result: %s", esp_err_to_name(redirection_result));
     if (redirection_result != ESP_OK) {
         ESP_LOGE(TAG, "Failed to handle redirection: %s", esp_err_to_name(redirection_result));
