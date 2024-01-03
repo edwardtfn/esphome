@@ -175,6 +175,36 @@ bool Nextion::upload_tft() {
   // Check the HTTP Status Code
   int status_code = esp_http_client_get_status_code(http);
   ESP_LOGV(TAG, "HTTP Status Code: %d", status_code);
+
+  // Handle redirection
+  if (status_code >= 300 && status_code < 400) {
+    char location_header[300] = {0};
+    esp_http_client_get_header(http, "Location", location_header, sizeof(location_header));
+
+    if (strlen(location_header) > 0) {
+      ESP_LOGD(TAG, "Redirected to: %s", location_header);
+      esp_http_client_cleanup(http);  // Clean up the current client
+
+      // Set up a new client for the redirected URL
+      esp_http_client_config_t redirect_config = {
+        .url = location_header,
+        .cert_pem = nullptr,
+        .method = HTTP_METHOD_HEAD,
+        .timeout_ms = 15000,
+      };
+      http = esp_http_client_init(&redirect_config);
+
+      // Perform the new request
+      err = esp_http_client_perform(http);
+      if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Redirected HTTP request failed: %s", esp_err_to_name(err));
+        esp_http_client_cleanup(http);
+        return this->upload_end(false);
+      }
+    }
+  }
+
+  // Check file size
   size_t tft_file_size = esp_http_client_get_content_length(http);
   ESP_LOGD(TAG, "TFT file size: %zu", tft_file_size);
 
@@ -201,6 +231,7 @@ bool Nextion::upload_tft() {
   // Once the Nextion accepts the command it will wait until the file is successfully uploaded
   // If it fails for any reason a power cycle of the display will be needed
   sprintf(command, "whmi-wris %d,%" PRIu32 ",1", this->content_length_, this->parent_->get_baud_rate());
+  ESP_LOGV(TAG, command);
 
   // Clear serial receive buffer
   uint8_t d;
