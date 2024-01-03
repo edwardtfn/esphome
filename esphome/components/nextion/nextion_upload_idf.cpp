@@ -53,36 +53,37 @@ int Nextion::upload_range(const std::string &url, int range_start) {
     esp_http_client_cleanup(client);
     return -1;
   }
-
-  // Check for redirection
-  int status_code = esp_http_client_get_status_code(client);
-  if (status_code == 301 || status_code == 302) {
-    // Handle redirection
-    char location_header[300] = {0};
-    esp_http_client_get_header(client, "Location", location_header, sizeof(location_header));
-
-    if (strlen(location_header) > 0) {
-      ESP_LOGD(TAG, "Redirected to: %s", location_header);
-
-      // Cleanup and reinitialize the client for the new URL
-      esp_http_client_cleanup(client);
-      config.url = location_header;
-      client = esp_http_client_init(&config);
-
-      // Open the connection again
-      if (esp_http_client_open(client, 0) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to open redirected HTTP connection");
-        esp_http_client_cleanup(client);
-        return -1;
-      }
-    }
-  }
-
-  ESP_LOGV(TAG, "Fetch content length");
+  
   int content_length = esp_http_client_fetch_headers(client);
-  ESP_LOGV(TAG, "content_length = %d", content_length);
-
   int status_code = esp_http_client_get_status_code(client);
+
+  // Handles redirections
+  if (status_code == 301 || status_code == 302) {
+      char *location_header = nullptr;
+      if (esp_http_client_get_header(client, "Location", &location_header) == ESP_OK) {
+          if (location_header != nullptr && strlen(location_header) > 0) {
+              ESP_LOGD(TAG, "Redirected to: %s", location_header);
+
+              esp_http_client_cleanup(client); // Clean up the previous client instance
+              config.url = location_header; // Set the new URL
+              client = esp_http_client_init(&config); // Reinitialize the client
+
+              if (esp_http_client_open(client, 0) != ESP_OK) {
+                  ESP_LOGE(TAG, "Failed to open redirected HTTP connection");
+                  free(location_header);
+                  esp_http_client_cleanup(client);
+                  return -1;
+              }
+
+              content_length = esp_http_client_fetch_headers(client);
+          }
+          free(location_header); // Free the allocated memory
+      }
+  } else if (status_code != 200) {
+      ESP_LOGE(TAG, "Unexpected HTTP status code: %d", status_code);
+      esp_http_client_cleanup(client);
+      return -1;
+  }
 
   // Check if the content length is valid
   if (content_length <= 0) {
