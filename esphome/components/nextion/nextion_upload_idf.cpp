@@ -64,6 +64,7 @@ int Nextion::upload_range(const std::string &url, int range_start) {
     ESP_LOGV(TAG, "Handling HTTP redirection");
     char *location_header = nullptr;
     esp_http_client_get_header(client, "Location", &location_header);
+    ESP_LOGV(TAG, "HTTP status code: %s", location_header);
     if (location_header != nullptr) {
       ESP_LOGD(TAG, "Redirected to: %s", location_header);
 
@@ -224,7 +225,7 @@ bool Nextion::upload_tft() {
   ESP_LOGV(TAG, "HTTP Status Code: %d", status_code);
 
   // Handle redirection
-  if (status_code >= 300 && status_code < 400) {
+  if (status_code == 301 || status_code == 302) {
     char *location_header = nullptr;
     esp_http_client_get_header(http, "Location", &location_header);
 
