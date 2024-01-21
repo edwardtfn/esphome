@@ -115,10 +115,10 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
 
     if (!this->upload_first_chunk_sent_) {
       this->upload_first_chunk_sent_ = true;
-      delay(500);  // NOLINT
+      // delay(500);  // NOLINT  ########################################## DEBUG ############################################
     }
 
-    this->recv_ret_string_(recv_string, 4096, true);
+    this->recv_ret_string_(recv_string, 5000, true);
 
     if (recv_string[0] == 0x08 && recv_string.size() == 5) {  // handle partial upload request
       ESP_LOGD(TAG, "recv_string [%s]",
@@ -135,8 +135,8 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
     } else if (recv_string[0] != 0x05) {  // 0x05 == "ok"
       ESP_LOGE(TAG, "Invalid response from Nextion: [%s]",
                format_hex_pretty(reinterpret_cast<const uint8_t *>(recv_string.data()), recv_string.size()).c_str());
-      // recv_string.clear();  // DEBUG #############################################################################################################################
-      // return -1;  // DEBUG #############################################################################################################################
+      recv_string.clear();
+      return -1;
     }
 
     recv_string.clear();
