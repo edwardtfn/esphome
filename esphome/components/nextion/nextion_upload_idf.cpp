@@ -86,15 +86,14 @@ int Nextion::upload_range(const std::string &url, int range_start) {
         ESP_LOGVV(TAG, "Write to UART successful");
         this->recv_ret_string_(recv_string, 5000, true);
         this->content_length_ -= read_len;
-        ESP_LOGD(TAG, "Uploaded %0.2f %%, remaining %d bytes",
-                 100.0 * (this->tft_size_ - this->content_length_) / this->tft_size_, this->content_length_);
-        if (recv_string[0] != 0x05) {  // 0x05 == "ok"
+        ESP_LOGD(TAG, "Uploaded %0.2f %%, remaining %d bytes, heap: %" PRIu32 " bytes",
+                 100.0 * (this->tft_size_ - this->content_length_) / this->tft_size_, this->content_length_,
+                 esp_get_free_heap_size());
+
+        if (recv_string[0] == 0x08 && recv_string.size() == 5) {  // handle partial upload request
           ESP_LOGD(
               TAG, "recv_string [%s]",
               format_hex_pretty(reinterpret_cast<const uint8_t *>(recv_string.data()), recv_string.size()).c_str());
-        }
-        // handle partial upload request
-        if (recv_string[0] == 0x08 && recv_string.size() == 5) {
           uint32_t result = 0;
           for (int j = 0; j < 4; ++j) {
             result += static_cast<uint8_t>(recv_string[j + 1]) << (8 * j);
@@ -109,7 +108,14 @@ int Nextion::upload_range(const std::string &url, int range_start) {
             esp_http_client_close(client);
             return result;
           }
+        } else if (recv_string[0] != 0x05) {  // 0x05 == "ok"
+          ESP_LOGE(
+              TAG, "Invalid response from Nextion: [%s]",
+              format_hex_pretty(reinterpret_cast<const uint8_t *>(recv_string.data()), recv_string.size()).c_str());
+          delete[] buffer;
+          return -1;
         }
+
         recv_string.clear();
       } else if (read_len == 0) {
         ESP_LOGV(TAG, "End of HTTP response reached");
