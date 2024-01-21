@@ -119,11 +119,11 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
     if (!this->upload_first_chunk_sent_) {
       ESP_LOGV(TAG, "First chunk was sent");
       this->upload_first_chunk_sent_ = true;
-      // delay(500);  // NOLINT
+      delay(500);  // NOLINT
       App.feed_wdt();
     }
 
-    this->recv_ret_string_(recv_string, 15000, true);
+    this->recv_ret_string_(recv_string, 5000, true);
 
     if (recv_string[0] == 0x08 && recv_string.size() == 5) {  // handle partial upload request
       ESP_LOGD(TAG, "recv_string [%s]",
@@ -258,7 +258,7 @@ bool Nextion::upload_tft() {
 
   std::string response;
   ESP_LOGD(TAG, "Waiting for upgrade response");
-  this->recv_ret_string_(response, 2000, true);  // This can take some time to return
+  this->recv_ret_string_(response, 5000, true);  // This can take some time to return
 
   // The Nextion display will, if it's ready to accept data, send a 0x05 byte.
   ESP_LOGD(TAG, "Upgrade response is [%s] - %zu bytes",
@@ -266,9 +266,9 @@ bool Nextion::upload_tft() {
            response.length());
 
   if (response.find(0x05) != std::string::npos) {
-    ESP_LOGD(TAG, "preparation for tft update done");
+    ESP_LOGD(TAG, "Preparation for tft update done");
   } else {
-    ESP_LOGD(TAG, "preparation for tft update failed %d \"%s\"", response[0], response.c_str());
+    ESP_LOGD(TAG, "Preparation for tft update failed %d \"%s\"", response[0], response.c_str());
     return this->upload_end_(false);
   }
 
