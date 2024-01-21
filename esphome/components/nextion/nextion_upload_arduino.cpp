@@ -119,7 +119,8 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
     if (!this->upload_first_chunk_sent_) {
       ESP_LOGV(TAG, "First chunk was sent");
       this->upload_first_chunk_sent_ = true;
-      delay(500);  // NOLINT
+      // delay(500);  // NOLINT
+      App.feed_wdt();
     }
 
     this->recv_ret_string_(recv_string, 5000, true);
@@ -263,10 +264,6 @@ bool Nextion::upload_tft() {
   ESP_LOGD(TAG, "Upgrade response is [%s] - %zu bytes",
            format_hex_pretty(reinterpret_cast<const uint8_t *>(response.data()), response.size()).c_str(),
            response.length());
-
-  for (size_t i = 0; i < response.length(); i++) {
-    ESP_LOGD(TAG, "Available %d : 0x%02X", i, response[i]);
-  }
 
   if (response.find(0x05) != std::string::npos) {
     ESP_LOGD(TAG, "preparation for tft update done");
