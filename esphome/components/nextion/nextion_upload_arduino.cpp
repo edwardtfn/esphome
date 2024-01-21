@@ -117,7 +117,7 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
              ESP.getFreeHeap());
 
     if (!this->upload_first_chunk_sent_) {
-      ESP_LOGN(TAG, "First chunk was sent");
+      ESP_LOGV(TAG, "First chunk was sent");
       this->upload_first_chunk_sent_ = true;
       delay(500);  // NOLINT
     }
