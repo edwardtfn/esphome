@@ -86,7 +86,7 @@ int Nextion::upload_range(const std::string &url, int range_start) {
         ESP_LOGVV(TAG, "Write to UART successful");
         this->recv_ret_string_(recv_string, 5000, true);
         this->content_length_ -= read_len;
-        ESP_LOGD(TAG, "Uploaded %0.2f %%, remaining %d bytes, heap: %" PRIu32 " bytes",
+        ESP_LOGD(TAG, "Uploaded %0.2f %%, remaining %d bytes, heap is %" PRIu32 " bytes",
                  100.0 * (this->tft_size_ - this->content_length_) / this->tft_size_, this->content_length_,
                  esp_get_free_heap_size());
 
@@ -104,8 +104,8 @@ int Nextion::upload_range(const std::string &url, int range_start) {
             // Deallocate the buffer when done
             delete[] buffer;
             ESP_LOGVV(TAG, "Memory for buffer deallocated");
-            esp_http_client_cleanup(client);
             esp_http_client_close(client);
+            esp_http_client_cleanup(client);
             return result;
           }
         } else if (recv_string[0] != 0x05) {  // 0x05 == "ok"
@@ -113,6 +113,8 @@ int Nextion::upload_range(const std::string &url, int range_start) {
               TAG, "Invalid response from Nextion: [%s]",
               format_hex_pretty(reinterpret_cast<const uint8_t *>(recv_string.data()), recv_string.size()).c_str());
           delete[] buffer;
+          esp_http_client_close(client);
+          esp_http_client_cleanup(client);
           return -1;
         }
 
@@ -130,8 +132,8 @@ int Nextion::upload_range(const std::string &url, int range_start) {
     delete[] buffer;
     ESP_LOGVV(TAG, "Memory for buffer deallocated");
   }
-  esp_http_client_cleanup(client);
   esp_http_client_close(client);
+  esp_http_client_cleanup(client);
   return range_end + 1;
 }
 
