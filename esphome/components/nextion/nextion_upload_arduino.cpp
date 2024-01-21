@@ -135,8 +135,8 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
     } else if (recv_string[0] != 0x05) {  // 0x05 == "ok"
       ESP_LOGE(TAG, "Invalid response from Nextion: [%s]",
                format_hex_pretty(reinterpret_cast<const uint8_t *>(recv_string.data()), recv_string.size()).c_str());
-      recv_string.clear();
-      return -1;
+      // recv_string.clear();  // DEBUG #############################################################################################################################
+      // return -1;  // DEBUG #############################################################################################################################
     }
 
     recv_string.clear();
