@@ -123,7 +123,7 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
       App.feed_wdt();
     }
 
-    this->recv_ret_string_(recv_string, 5000, true);
+    this->recv_ret_string_(recv_string, 15000, true);
 
     if (recv_string[0] == 0x08 && recv_string.size() == 5) {  // handle partial upload request
       ESP_LOGD(TAG, "recv_string [%s]",

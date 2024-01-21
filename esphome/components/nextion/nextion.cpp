@@ -900,7 +900,6 @@ uint16_t Nextion::recv_ret_string_(std::string &response, uint32_t timeout, bool
   while ((timeout == 0 && this->available()) || millis() - start <= timeout) {
     if (!this->available()) {
       App.feed_wdt();
-      delay(1);
       continue;
     }
 
