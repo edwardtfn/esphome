@@ -92,7 +92,7 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
     size = http->getStreamPtr()->available();
     if (!size) {
       App.feed_wdt();
-      delay(0);
+      delay(2);
       continue;
     }
     int c = http->getStreamPtr()->readBytes(
