@@ -103,12 +103,12 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
   ESP_LOGV(TAG, "Fetched %d of %d bytes", fetched, this->content_length_);
 
   // upload fetched segments to the display in 4KB chunks
-  int write_len = 4096;
+  int write_len;
   for (int i = 0; i < range; i += 4096) {
     App.feed_wdt();
-    if (this->content_length_ < 4096) {
-      ESP_LOGW(TAG, "Content is only %d bytes", this->content_length_);
-      write_len = this->content_length_;
+    write_len = (this->content_length_ < 4096) ? this->content_length_ : 4096;
+    if (write_len != 4096) {
+      ESP_LOGW(TAG, "Write block is %d bytes", write_len);
     }
     this->write_array(&this->transfer_buffer_[i], write_len);
     this->content_length_ -= write_len;
