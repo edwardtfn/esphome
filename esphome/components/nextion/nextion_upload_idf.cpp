@@ -215,9 +215,16 @@ bool Nextion::upload_tft() {
   size_t tft_file_size = esp_http_client_get_content_length(http);
   ESP_LOGD(TAG, "TFT file size: %zu", tft_file_size);
 
+  ESP_LOGD(TAG, "Close HTTP connection");
+  ESP_LOGV(TAG, "Available heap: %" PRIu32, esp_get_free_heap_size());
+  esp_http_client_close(http);
+  esp_http_client_cleanup(http);
+  ESP_LOGD(TAG, "Connection closed");
+  ESP_LOGV(TAG, "Available heap: %" PRIu32, esp_get_free_heap_size());
+
+
   if (tft_file_size < 4096) {
     ESP_LOGE(TAG, "File size check failed. Size: %zu", tft_file_size);
-    esp_http_client_cleanup(http);
     return this->upload_end(false);
   } else {
     ESP_LOGV(TAG, "File size check passed. Proceeding...");
@@ -266,7 +273,6 @@ bool Nextion::upload_tft() {
     ESP_LOGV(TAG, "Preparation for tft update done");
   } else {
     ESP_LOGE(TAG, "Preparation for tft update failed %d \"%s\"", response[0], response.c_str());
-    esp_http_client_cleanup(http);
     return this->upload_end(false);
   }
 
@@ -280,7 +286,6 @@ bool Nextion::upload_tft() {
     result = upload_range(this->tft_url_.c_str(), result);
     if (result < 0) {
       ESP_LOGE(TAG, "Error updating Nextion!");
-      esp_http_client_cleanup(http);
       return this->upload_end(false);
     }
     App.feed_wdt();
@@ -289,12 +294,6 @@ bool Nextion::upload_tft() {
 
   ESP_LOGD(TAG, "Successfully updated Nextion!");
 
-  ESP_LOGD(TAG, "Close HTTP connection");
-  ESP_LOGV(TAG, "Available heap: %" PRIu32, esp_get_free_heap_size());
-  esp_http_client_close(http);
-  esp_http_client_cleanup(http);
-  ESP_LOGD(TAG, "Connection closed");
-  ESP_LOGV(TAG, "Available heap: %" PRIu32, esp_get_free_heap_size());
   return upload_end(true);
 }
 
