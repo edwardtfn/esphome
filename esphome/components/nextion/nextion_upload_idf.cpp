@@ -123,7 +123,7 @@ int Nextion::upload_range(const std::string &url, int range_start) {
           ESP_LOGV(TAG, "Deallocate buffer");
           ESP_LOGVV(TAG, "Available heap: %" PRIu32, esp_get_free_heap_size());
           delete[] buffer;
-          ESP_LOGvV(TAG, "Memory for buffer deallocated");
+          ESP_LOGVV(TAG, "Memory for buffer deallocated");
           ESP_LOGVV(TAG, "Available heap: %" PRIu32, esp_get_free_heap_size());
           ESP_LOGV(TAG, "Close http client");
           ESP_LOGVV(TAG, "Available heap: %" PRIu32, esp_get_free_heap_size());
@@ -148,7 +148,7 @@ int Nextion::upload_range(const std::string &url, int range_start) {
     ESP_LOGV(TAG, "Deallocate buffer");
     ESP_LOGVV(TAG, "Available heap: %" PRIu32, esp_get_free_heap_size());
     delete[] buffer;
-    ESP_LOGvV(TAG, "Memory for buffer deallocated");
+    ESP_LOGVV(TAG, "Memory for buffer deallocated");
     ESP_LOGVV(TAG, "Available heap: %" PRIu32, esp_get_free_heap_size());
   }
   ESP_LOGV(TAG, "Close http client");
