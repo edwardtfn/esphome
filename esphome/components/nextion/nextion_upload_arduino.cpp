@@ -108,7 +108,7 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
     App.feed_wdt();
     if (this->content_length_ < 4096) {
       ESP_LOGW(TAG, "Content is only %d bytes", this->content_length_);
-      write_len = this->content_length_
+      write_len = this->content_length_;
     }
     this->write_array(&this->transfer_buffer_[i], write_len);
     this->content_length_ -= write_len;
