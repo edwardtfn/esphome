@@ -100,13 +100,16 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
     fetched += c;
   }
   http->end();
-  ESP_LOGN(TAG, "Fetched %d of %d bytes", fetched, this->content_length_);
+  ESP_LOGV(TAG, "Fetched %d of %d bytes", fetched, this->content_length_);
 
   // upload fetched segments to the display in 4KB chunks
-  int write_len;
+  int write_len = 4096;
   for (int i = 0; i < range; i += 4096) {
     App.feed_wdt();
-    write_len = this->content_length_ < 4096 ? this->content_length_ : 4096;
+    if (this->content_length_ < 4096) {
+      ESP_LOGW(TAG, "Content is only %d bytes", this->content_length_);
+      write_len = this->content_length_
+    }
     this->write_array(&this->transfer_buffer_[i], write_len);
     this->content_length_ -= write_len;
     ESP_LOGD(TAG, "Uploaded %0.2f %%; %d bytes remaining, heap: %" PRIu32 " bytes",
@@ -114,8 +117,9 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
              ESP.getFreeHeap());
 
     if (!this->upload_first_chunk_sent_) {
+      ESP_LOGN(TAG, "First chunk was sent");
       this->upload_first_chunk_sent_ = true;
-      // delay(500);  // NOLINT  ########################################## DEBUG ############################################
+      delay(500);  // NOLINT
     }
 
     this->recv_ret_string_(recv_string, 5000, true);
