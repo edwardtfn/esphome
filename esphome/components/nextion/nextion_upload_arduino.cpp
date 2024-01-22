@@ -116,14 +116,14 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
              100.0 * (this->tft_size_ - this->content_length_) / this->tft_size_, this->content_length_,
              ESP.getFreeHeap());
 
+    this->recv_ret_string_(recv_string, 5000, true);
+
     if (!this->upload_first_chunk_sent_) {
       ESP_LOGV(TAG, "First chunk was sent");
       this->upload_first_chunk_sent_ = true;
       delay(500);  // NOLINT
       App.feed_wdt();
     }
-
-    this->recv_ret_string_(recv_string, 5000, true);
 
     if (recv_string[0] == 0x08 && recv_string.size() == 5) {  // handle partial upload request
       ESP_LOGD(TAG, "recv_string [%s]",
@@ -288,7 +288,6 @@ bool Nextion::upload_tft() {
       chunk_size = 4096;
     }
   }
-  chunk_size = 4096;  // DEBUG
 #else
   // NOLINTNEXTLINE(readability-static-accessed-through-instance)
   uint32_t chunk_size = ESP.getFreeHeap() < 16384 ? 4096 : 8192;
