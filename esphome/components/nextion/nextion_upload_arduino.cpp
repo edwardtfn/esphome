@@ -110,13 +110,11 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
     if (write_len != 4096) {
       ESP_LOGW(TAG, "Write block is %d bytes", write_len);
     }
-    delay(5000);  // DEBUG
     this->write_array(&this->transfer_buffer_[i], write_len);
     this->content_length_ -= write_len;
     ESP_LOGD(TAG, "Uploaded %0.2f %%; %d bytes remaining, heap: %" PRIu32 " bytes",
              100.0 * (this->tft_size_ - this->content_length_) / this->tft_size_, this->content_length_,
              ESP.getFreeHeap());
-    delay(5000);  // DEBUG
 
     if (!this->upload_first_chunk_sent_) {
       ESP_LOGV(TAG, "First chunk was sent");
@@ -125,6 +123,7 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
       App.feed_wdt();
     }
 
+    recv_string.clear();
     this->recv_ret_string_(recv_string, 5000, true);
 
     if (recv_string[0] == 0x08 && recv_string.size() == 5) {  // handle partial upload request
