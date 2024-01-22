@@ -55,14 +55,14 @@ int Nextion::upload_range(const std::string &url, int range_start) {
   char range_header[64];
   sprintf(range_header, "bytes=%d-%d", range_start, range_end);
   ESP_LOGV(TAG, "Requesting range: %s", range_header);
-  client->addHeader("Range", range_header);
+  client.addHeader("Range", range_header);
   ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
 
-  int code = client->GET();
+  int code = client.GET();
   if (code != 200 and code != 206) {
-    ESP_LOGW(TAG, "HTTP Request failed; URL: %s; Error: %s, retries(%d/5)", this->tft_url_.c_str(),
-            HTTPClient::errorToString(code).c_str(), tries);
-    client->end();
+    ESP_LOGW(TAG, "HTTP Request failed; URL: %s; Error: %s", this->tft_url_.c_str(),
+            HTTPClient::errorToString(code).c_str());
+    client.end();
     App.feed_wdt();
     delay(500);  // NOLINT
     return -1;
@@ -119,7 +119,7 @@ int Nextion::upload_range(const std::string &url, int range_start) {
             ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
             ESP_LOGV(TAG, "Close http client");
             ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
-            client->end();
+            client.end();
             ESP_LOGVV(TAG, "Client closed");
             ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
             return result;
@@ -135,7 +135,7 @@ int Nextion::upload_range(const std::string &url, int range_start) {
           ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
           ESP_LOGV(TAG, "Close http client");
           ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
-          client->end();
+          client.end();
           ESP_LOGVV(TAG, "Client closed");
           ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
           return -1;
@@ -160,7 +160,7 @@ int Nextion::upload_range(const std::string &url, int range_start) {
   }
   ESP_LOGV(TAG, "Close http client");
   ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
-  client->end();
+  client.end();
   ESP_LOGVV(TAG, "Client closed");
   ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
   return range_end + 1;
