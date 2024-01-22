@@ -288,7 +288,7 @@ bool Nextion::upload_tft() {
       chunk_size = 4096;
     }
   }
-  chunk_size = 4096;  // DEBUG
+  chunk_size = 16384;  // DEBUG
 #else
   // NOLINTNEXTLINE(readability-static-accessed-through-instance)
   uint32_t chunk_size = ESP.getFreeHeap() < 16384 ? 4096 : 8192;
