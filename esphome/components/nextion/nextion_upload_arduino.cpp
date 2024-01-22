@@ -247,17 +247,19 @@ bool Nextion::upload_tft() {
   sprintf(command, "whmi-wris %d,%d,1", this->content_length_, this->parent_->get_baud_rate());
 
   // Clear serial receive buffer
+  ESP_LOGV(TAG, "Clear serial receive buffer");
+  ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
   uint8_t d;
   while (this->available()) {
     this->read_byte(&d);
   };
 
+  ESP_LOGV(TAG, "Send update instruction: %s", command);
+  ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
   this->send_command_(command);
 
-  App.feed_wdt();
-
   std::string response;
-  ESP_LOGD(TAG, "Waiting for upgrade response");
+  ESP_LOGV(TAG, "Waiting for upgrade response");
   this->recv_ret_string_(response, 5000, true);  // This can take some time to return
 
   // The Nextion display will, if it's ready to accept data, send a 0x05 byte.
