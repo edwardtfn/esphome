@@ -35,7 +35,7 @@ int Nextion::upload_range(const std::string &url, int range_start) {
   }
   
   HTTPClient client;
-  http.setTimeout(15000);  // Yes 15 seconds.... Helps 8266s along
+  client.setTimeout(15000);  // Yes 15 seconds.... Helps 8266s along
   bool begin_status = false;
 #ifdef USE_ESP32
   begin_status = client.begin(this->tft_url_.c_str());
@@ -58,14 +58,15 @@ int Nextion::upload_range(const std::string &url, int range_start) {
   client->addHeader("Range", range_header);
   ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
 
-  code = client->GET();
+  int code = client->GET();
   if (code != 200 and code != 206) {
     ESP_LOGW(TAG, "HTTP Request failed; URL: %s; Error: %s, retries(%d/5)", this->tft_url_.c_str(),
             HTTPClient::errorToString(code).c_str(), tries);
     client->end();
     App.feed_wdt();
     delay(500);  // NOLINT
-
+    return -1;
+  }
 
   int total_read_len = 0, read_len;
 
