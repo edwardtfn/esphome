@@ -83,13 +83,13 @@ int Nextion::upload_range(const std::string &url, int range_start) {
     while (true) {
       App.feed_wdt();
       ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
-      size = client->getStreamPtr()->available();
+      int size = client.getStreamPtr()->available();
       if (!size) {
         App.feed_wdt();
         delay(2);
         continue;
       }
-      int read_len = client->getStreamPtr()->readBytes(&buffer, 4096);
+      int read_len = client.getStreamPtr()->readBytes(&buffer, 4096);
       ESP_LOGVV(TAG, "Read %d bytes from HTTP client, writing to UART", read_len);
       if (read_len > 0) {
         this->write_array(buffer, read_len);

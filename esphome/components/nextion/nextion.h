@@ -1089,7 +1089,7 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
    * @param bool url successful True: Transfer completed successfuly, False: Transfer failed.
    * @return bool True: Transfer completed successfuly, False: Transfer failed.
    */
-  bool upload_end(bool successful);
+  bool upload_end_(bool successful);
 
 #endif  // USE_NEXTION_TFT_UPLOAD
 
