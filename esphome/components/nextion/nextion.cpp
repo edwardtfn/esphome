@@ -21,7 +21,7 @@ void Nextion::setup() {
   this->send_command_("sleep=0");
 
   // Reboot it
-  this->send_command_("rest");
+  // this->send_command_("rest");
 
   this->ignore_is_setup_ = false;
 }
@@ -47,7 +47,7 @@ bool Nextion::check_connect_() {
     this->reset_(false);
 
     this->ignore_is_setup_ = true;
-    this->send_command_("boguscommand=0");  // bogus command. needed sometimes after updating
+    // this->send_command_("boguscommand=0");  // bogus command. needed sometimes after updating
     if (this->exit_reparse_on_start_) {
       this->send_command_("DRAKJHSUYDGBNCJHGJKSHBDN");
     }
