@@ -51,7 +51,7 @@ bool Nextion::check_connect_() {
     if (this->exit_reparse_on_start_) {
       this->send_command_("DRAKJHSUYDGBNCJHGJKSHBDN");
     }
-    this->send_command_("connect");
+    // this->send_command_("connect");
 
     this->comok_sent_ = millis();
     this->ignore_is_setup_ = false;
