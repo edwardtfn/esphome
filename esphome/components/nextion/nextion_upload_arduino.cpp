@@ -107,8 +107,8 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
   for (int i = 0; i < range; i += 4096) {
     App.feed_wdt();
     write_len = this->content_length_ < 4096 ? this->content_length_ : 4096;
-    this->write_array(&this->transfer_buffer_[i], 4096);
-    this->recv_ret_string_(recv_string, 5000, true);
+    this->write_array(&this->transfer_buffer_[i], write_len);
+    this->recv_ret_string_(recv_string, this->upload_first_chunk_sent_ ? 2000 : 5000, true);
 
     if (recv_string[0] == 0x08 && recv_string.size() == 5) {  // handle partial upload request
       ESP_LOGD(
