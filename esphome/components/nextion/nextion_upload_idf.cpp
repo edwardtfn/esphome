@@ -84,7 +84,6 @@ int Nextion::upload_range(const std::string &url, int range_start) {
       ESP_LOGVV(TAG, "Read %d bytes from HTTP client, writing to UART", read_len);
       if (read_len > 0) {
         this->write_array(buffer, read_len);
-        ESP_LOGVV(TAG, "Write to UART successful");
         this->recv_ret_string_(recv_string, 5000, true);
         this->content_length_ -= read_len;
         ESP_LOGD(TAG, "Uploaded %0.2f %%, remaining %d bytes, heap is %" PRIu32 " bytes",
@@ -261,7 +260,7 @@ bool Nextion::upload_tft() {
 
   std::string response;
   ESP_LOGV(TAG, "Waiting for upgrade response");
-  this->recv_ret_string_(response, 5000, true);  // This can take some time to return
+  this->recv_ret_string_(response, 2000, true);  // This can take some time to return
 
   // The Nextion display will, if it's ready to accept data, send a 0x05 byte.
   ESP_LOGD(TAG, "Upgrade response is [%s] - %zu bytes",

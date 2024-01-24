@@ -108,34 +108,36 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
     App.feed_wdt();
     write_len = this->content_length_ < 4096 ? this->content_length_ : 4096;
     this->write_array(&this->transfer_buffer_[i], write_len);
-    this->content_length_ -= write_len;
-    ESP_LOGD(TAG, "Uploaded %0.2f %%; %d bytes remaining",
-             100.0 * (this->tft_size_ - this->content_length_) / this->tft_size_, this->content_length_);
+    this->recv_ret_string_(recv_string, this->upload_first_chunk_sent_ ? 500 : 2000, true);
 
-    if (!this->upload_first_chunk_sent_) {
-      this->upload_first_chunk_sent_ = true;
-      delay(500);  // NOLINT
-    }
-
-    this->recv_ret_string_(recv_string, 4096, true);
-    if (recv_string[0] != 0x05) {  // 0x05 == "ok"
-      ESP_LOGD(TAG, "recv_string [%s]",
-               format_hex_pretty(reinterpret_cast<const uint8_t *>(recv_string.data()), recv_string.size()).c_str());
-    }
-
-    // handle partial upload request
-    if (recv_string[0] == 0x08 && recv_string.size() == 5) {
+    if (recv_string[0] == 0x08 && recv_string.size() == 5) {  // handle partial upload request
+      ESP_LOGD(
+          TAG, "recv_string [%s]",
+          format_hex_pretty(reinterpret_cast<const uint8_t *>(recv_string.data()), recv_string.size()).c_str());
       uint32_t result = 0;
       for (int j = 0; j < 4; ++j) {
         result += static_cast<uint8_t>(recv_string[j + 1]) << (8 * j);
       }
       if (result > 0) {
-        ESP_LOGD(TAG, "Nextion reported new range %d", result);
+        ESP_LOGI(TAG, "Nextion reported new range %" PRIu32, result);
         this->content_length_ = this->tft_size_ - result;
         return result;
       }
+    } else if (recv_string[0] != 0x05) {  // 0x05 == "ok"
+      ESP_LOGE(
+          TAG, "Invalid response from Nextion: [%s]",
+          format_hex_pretty(reinterpret_cast<const uint8_t *>(recv_string.data()), recv_string.size()).c_str());
+      return -1;
     }
+
+    this->content_length_ -= write_len;
+    ESP_LOGD(TAG, "Uploaded %0.2f %%; %d bytes remaining",
+             100.0 * (this->tft_size_ - this->content_length_) / this->tft_size_, this->content_length_);
+
     recv_string.clear();
+    if (!this->upload_first_chunk_sent_) {
+      this->upload_first_chunk_sent_ = true;
+    }
   }
 
   return range_end + 1;
@@ -238,11 +240,15 @@ bool Nextion::upload_tft() {
   sprintf(command, "whmi-wris %d,%d,1", this->content_length_, this->parent_->get_baud_rate());
 
   // Clear serial receive buffer
+  ESP_LOGV(TAG, "Clear serial receive buffer");
+  ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
   uint8_t d;
   while (this->available()) {
     this->read_byte(&d);
   };
 
+  ESP_LOGV(TAG, "Send update instruction: %s", command);
+  ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
   this->send_command_(command);
 
   App.feed_wdt();
@@ -261,9 +267,9 @@ bool Nextion::upload_tft() {
   }
 
   if (response.find(0x05) != std::string::npos) {
-    ESP_LOGD(TAG, "preparation for tft update done");
+    ESP_LOGD(TAG, "Preparation for TFT update done");
   } else {
-    ESP_LOGD(TAG, "preparation for tft update failed %d \"%s\"", response[0], response.c_str());
+    ESP_LOGD(TAG, "Preparation for TFT update failed %d \"%s\"", response[0], response.c_str());
     return this->upload_end_(false);
   }
 
@@ -276,8 +282,8 @@ bool Nextion::upload_tft() {
     if (ESP.getFreeHeap() > 81920) {  // Ensure some FreeHeap to other things and limit chunk size
       chunk_size = ESP.getFreeHeap() - 65536;
       chunk_size = int(chunk_size / 4096) * 4096;
-      chunk_size = chunk_size > 65536 ? 65536 : chunk_size;
-    } else if (ESP.getFreeHeap() < 32768) {
+      chunk_size = chunk_size > 32768 ? 32768 : chunk_size;
+    } else if (ESP.getFreeHeap() < 16384) {
       chunk_size = 4096;
     }
   }
