@@ -311,6 +311,20 @@ bool Nextion::upload_tft() {
     this->transfer_buffer_size_ = chunk_size;
   }
 
+  // Give Nextion some time...
+  ESP_LOGD(TAG, "Giving Nextion some time to get prepared... (1/4)");
+  delay(500);
+  App.feed_wdt();
+  ESP_LOGD(TAG, "Giving Nextion some time to get prepared... (2/4)");
+  delay(500);
+  App.feed_wdt();
+  ESP_LOGD(TAG, "Giving Nextion some time to get prepared... (3/4)");
+  delay(500);
+  App.feed_wdt();
+  ESP_LOGD(TAG, "Giving Nextion some time to get prepared... (4/4)");
+  delay(500);
+  App.feed_wdt();
+
   // NOLINTNEXTLINE(readability-static-accessed-through-instance)
   ESP_LOGD(TAG, "Updating tft from \"%s\" with a file size of %d using %zu chunksize, Heap Size %d",
            this->tft_url_.c_str(), this->content_length_, this->transfer_buffer_size_, ESP.getFreeHeap());
