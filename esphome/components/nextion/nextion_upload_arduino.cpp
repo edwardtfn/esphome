@@ -109,7 +109,7 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
     write_len = this->content_length_ < 4096 ? this->content_length_ : 4096;
     ESP_LOGV(TAG, "(%i/%i) Writing %d of %d bytes", i, range, write_len, this->content_length_);
     this->write_array(&this->transfer_buffer_[i], write_len);
-    this->recv_ret_string_(recv_string, 500, true);  // this->upload_first_chunk_sent_ ? 2000 : 5000, true);
+    this->recv_ret_string_(recv_string, 500, false);  // this->upload_first_chunk_sent_ ? 2000 : 5000, true);
 
     if (recv_string[0] == 0x08 && recv_string.size() == 5) {  // handle partial upload request
       ESP_LOGD(
