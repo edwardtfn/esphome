@@ -107,7 +107,7 @@ int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
   for (int i = 0; i < range; i += 4096) {
     App.feed_wdt();
     write_len = this->content_length_ < 4096 ? this->content_length_ : 4096;
-    ESP_LOGV(TAG, "Writing %d of %d bytes", write_len, this->content_length_);
+    ESP_LOGV(TAG, "(%i/%i) Writing %d of %d bytes", i, range, write_len, this->content_length_);
     this->write_array(&this->transfer_buffer_[i], write_len);
     this->recv_ret_string_(recv_string, this->upload_first_chunk_sent_ ? 2000 : 5000, true);
 
