@@ -122,6 +122,23 @@ int Nextion::upload_range(int range_start) {
   }
   #endif  // ARDUINO vs USE_ESP_IDF
 
+  ESP_LOGV(TAG, "Fetch content length");
+  #ifdef ARDUINO
+  int content_length = client.getStreamPtr()->available();
+  #elif defined(USE_ESP_IDF)
+  int content_length = esp_http_client_fetch_headers(client);
+  #endif  // ARDUINO vs USE_ESP_IDF
+  ESP_LOGV(TAG, "content_length = %d", content_length);
+  if (content_length <= 0) {
+    ESP_LOGE(TAG, "Failed to get content length: %d", content_length);
+    #ifdef ARDUINO
+    client.end();
+    #elif defined(USE_ESP_IDF)
+    esp_http_client_cleanup(client);
+    #endif  // ARDUINO vs USE_ESP_IDF
+    return -1;
+  }
+
   int total_read_len = 0, read_len;
   std::string recv_string;
 
