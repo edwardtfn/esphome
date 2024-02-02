@@ -181,7 +181,7 @@ int Nextion::upload_range(int range_start) {
             int currentChunkSize = min(UARTchunkSize, read_len - bytesSent);
             this->write_array(buffer + bytesSent, currentChunkSize);
             bytesSent += currentChunkSize;
-
+            ESP_LOGV(TAG, "%d of %d bytes sent to Nextion", bytesSent, read_len);
             // Optional: delay between chunks if required for stability
             // delay(10); // Adjust based on your requirements and testing
         }
