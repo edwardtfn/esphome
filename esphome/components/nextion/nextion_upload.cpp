@@ -404,9 +404,10 @@ bool Nextion::upload_tft() {
   }
 
   delay(500);
-
-  ESP_LOGD(TAG, "Updating tft from \"%s\" with a file size of %d, free heap: %" PRIu32, this->tft_url_.c_str(),
-           this->content_length_, GetFreeHeap_());
+  ESP_LOGD(TAG, "Updating TFT to Nextion:");
+  ESP_LOGD(TAG, "  URL: %s", this->tft_url_.c_str());
+  ESP_LOGD(TAG, "  File size: %d", this->content_length_);
+  ESP_LOGD(TAG, "  Free heap: %" PRIu32, GetFreeHeap_());
 
   delay(500);
 
