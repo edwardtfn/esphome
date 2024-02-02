@@ -20,6 +20,173 @@ static const char *const TAG = "nextion.upload.arduino";
 // Followed guide
 // https://unofficialnextion.com/t/nextion-upload-protocol-v1-2-the-fast-one/1044/2
 
+int Nextion::upload_range(const std::string &url, int range_start) {
+  ESP_LOGVV(TAG, "url: %s", url.c_str());
+  uint range_size = this->tft_size_ - range_start;
+  ESP_LOGVV(TAG, "tft_size_: %i", this->tft_size_);
+  ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+  int range_end = (range_start == 0) ? std::min(this->tft_size_, 16383) : this->tft_size_;
+  if (range_size <= 0 or range_end <= range_start) {
+    ESP_LOGE(TAG, "Invalid range");
+    ESP_LOGD(TAG, "Range start: %i", range_start);
+    ESP_LOGD(TAG, "Range end: %i", range_end);
+    ESP_LOGD(TAG, "Range size: %i", range_size);
+    return -1;
+  }
+
+  HTTPClient client;
+  client.setTimeout(15000);  // Yes 15 seconds.... Helps 8266s along
+
+#ifdef USE_ESP8266
+#if USE_ARDUINO_VERSION_CODE >= VERSION_CODE(2, 7, 0)
+  client.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+#elif USE_ARDUINO_VERSION_CODE >= VERSION_CODE(2, 6, 0)
+  client.setFollowRedirects(true);
+#endif
+#if USE_ARDUINO_VERSION_CODE >= VERSION_CODE(2, 6, 0)
+  client.setRedirectLimit(3);
+#endif
+#endif  // USE_ESP8266
+
+  char range_header[64];
+  sprintf(range_header, "bytes=%d-%d", range_start, range_end);
+  ESP_LOGV(TAG, "Requesting range: %s", range_header);
+
+  int tries = 1;
+  int code = 0;
+  bool begin_status = false;
+  while (tries <= 5) {
+#ifdef USE_ESP32
+  begin_status = client.begin(url.c_str());
+#endif
+#ifdef USE_ESP8266
+  begin_status = client.begin(*this->get_wifi_client_(), url.c_str());
+#endif
+
+    ++tries;
+    if (!begin_status) {
+      ESP_LOGD(TAG, "upload_by_chunks_: connection failed");
+      delay(500);  // NOLINT
+      continue;
+    }
+
+    client->addHeader("Range", range_header);
+
+    code = client->GET();
+    if (code == 200 || code == 206) {
+      break;
+    }
+    ESP_LOGW(TAG, "HTTP Request failed; URL: %s; Error: %s, retries(%d/5)", url.c_str(),
+             HTTPClient::errorToString(code).c_str(), tries);
+    client->end();
+    App.feed_wdt();
+    delay(500);  // NOLINT
+  }
+
+  if (tries > 5 or !begin_status) {
+    return -1;
+  }
+  ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+  ESP_LOGV(TAG, "Fetch content length");
+  int content_length = client.contentLength();
+  ESP_LOGV(TAG, "content_length = %d", content_length);
+  if (content_length <= 0) {
+    ESP_LOGE(TAG, "Failed to get content length: %d", content_length);
+    client->end();
+    return -1;
+  }
+
+  int total_read_len = 0, read_len;
+
+  ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+  ESP_LOGV(TAG, "Allocate buffer");
+  uint8_t *buffer = new uint8_t[4096];
+  std::string recv_string;
+  if (buffer == nullptr) {
+    ESP_LOGE(TAG, "Failed to allocate memory for buffer");
+    ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+  } else {
+    ESP_LOGV(TAG, "Memory for buffer allocated successfully");
+
+    while (true) {
+      App.feed_wdt();
+      ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+      int read_len = client->getStreamPtr()->readBytes(reinterpret_cast<char *>(buffer), 4096);
+      ESP_LOGVV(TAG, "Read %d bytes from HTTP client, writing to UART", read_len);
+      if (read_len > 0) {
+        this->write_array(buffer, read_len);
+        this->recv_ret_string_(recv_string, 5000, true);
+        this->content_length_ -= read_len;
+        ESP_LOGD(TAG, "Uploaded %0.2f %%, remaining %d bytes, heap is %" PRIu32 " bytes",
+                 100.0 * (this->tft_size_ - this->content_length_) / this->tft_size_, this->content_length_,
+                 ESP.getFreeHeap());
+
+        if (recv_string[0] == 0x08 && recv_string.size() == 5) {  // handle partial upload request
+          ESP_LOGD(
+              TAG, "recv_string [%s]",
+              format_hex_pretty(reinterpret_cast<const uint8_t *>(recv_string.data()), recv_string.size()).c_str());
+          uint32_t result = 0;
+          for (int j = 0; j < 4; ++j) {
+            result += static_cast<uint8_t>(recv_string[j + 1]) << (8 * j);
+          }
+          if (result > 0) {
+            ESP_LOGI(TAG, "Nextion reported new range %" PRIu32, result);
+            this->content_length_ = this->tft_size_ - result;
+            // Deallocate the buffer when done
+            ESP_LOGV(TAG, "Deallocate buffer");
+            ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+            delete[] buffer;
+            ESP_LOGVV(TAG, "Memory for buffer deallocated");
+            ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+            ESP_LOGV(TAG, "Close http client");
+            ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+            client->end();
+            ESP_LOGVV(TAG, "Client closed");
+            ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+            return result;
+          }
+        } else if (recv_string[0] != 0x05) {  // 0x05 == "ok"
+          ESP_LOGE(
+              TAG, "Invalid response from Nextion: [%s]",
+              format_hex_pretty(reinterpret_cast<const uint8_t *>(recv_string.data()), recv_string.size()).c_str());
+          ESP_LOGV(TAG, "Deallocate buffer");
+          ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+          delete[] buffer;
+          ESP_LOGVV(TAG, "Memory for buffer deallocated");
+          ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+          ESP_LOGV(TAG, "Close http client");
+          ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+          client->end();
+          ESP_LOGVV(TAG, "Client closed");
+          ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+          return -1;
+        }
+
+        recv_string.clear();
+      } else if (read_len == 0) {
+        ESP_LOGV(TAG, "End of HTTP response reached");
+        break;  // Exit the loop if there is no more data to read
+      } else {
+        ESP_LOGE(TAG, "Failed to read from HTTP client, error code: %d", read_len);
+        break;  // Exit the loop on error
+      }
+    }
+
+    // Deallocate the buffer when done
+    ESP_LOGV(TAG, "Deallocate buffer");
+    ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+    delete[] buffer;
+    ESP_LOGVV(TAG, "Memory for buffer deallocated");
+    ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+  }
+  ESP_LOGV(TAG, "Close http client");
+  ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+  client->end();
+  ESP_LOGVV(TAG, "Client closed");
+  ESP_LOGVV(TAG, "Available heap: %" PRIu32, ESP.getFreeHeap());
+  return range_end + 1;
+}
+
 int Nextion::upload_by_chunks_(HTTPClient *http, int range_start) {
   int range_end = 0;
 
@@ -331,7 +498,7 @@ bool Nextion::upload_tft() {
 
   int result = 0;
   while (this->content_length_ > 0) {
-    result = this->upload_by_chunks_(&http, result);
+    result = upload_range(this->tft_url_.c_str(), result);
     if (result < 0) {
       ESP_LOGD(TAG, "Error updating Nextion!");
       return this->upload_end_(false);
