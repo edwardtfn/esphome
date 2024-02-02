@@ -133,14 +133,14 @@ int Nextion::upload_range(int range_start) {
   } else {
     ESP_LOGV(TAG, "Memory for buffer allocated successfully");
     while (true) {
-      int bufferSize = (this->content_length_ < 4096) ? this->content_length_ : 4096;  // Limits buffer to the remaining data
-      ESP_LOGV(TAG, "Fetching %d bytes from HTTP client", bufferSize);
       App.feed_wdt();
       #ifdef ARDUINO
+      int bufferSize = (this->content_length_ < 4096) ? this->content_length_ : 4096;  // Limits buffer to the remaining data
       unsigned long startTime = millis(); // Start time for timeout calculation
       const unsigned long timeout = 5000; // Maximum timeout in milliseconds
       int read_len = 0;
       int partial_read_len = 0;
+      ESP_LOGV(TAG, "Fetching %d bytes from HTTP client", bufferSize);
       while (read_len < bufferSize && millis() - startTime < timeout) {
         if (client.getStreamPtr()->available() > 0) {
           partial_read_len = client.getStreamPtr()->readBytes(reinterpret_cast<char *>(buffer) + read_len, bufferSize - read_len);
@@ -153,7 +153,7 @@ int Nextion::upload_range(int range_start) {
         }
       }
       #elif defined(USE_ESP_IDF)
-      int read_len = esp_http_client_read(client, reinterpret_cast<char *>(buffer), bufferSize);
+      int read_len = esp_http_client_read(client, reinterpret_cast<char *>(buffer), 4096);
       #endif  // ARDUINO vs USE_ESP_IDF
       if (read_len != bufferSize) {
         // Did not receive the full package within the timeout period
