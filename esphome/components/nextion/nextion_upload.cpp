@@ -27,7 +27,7 @@ static const char *const TAG = "nextion.upload.idf";
 // Followed guide
 // https://unofficialnextion.com/t/nextion-upload-protocol-v1-2-the-fast-one/1044/2
 
-size_t GetFreeHeap_() {
+uint_32 GetFreeHeap_() {
   #ifdef ARDUINO
   return ESP.getFreeHeap();
   #elif defined(USE_ESP_IDF)
@@ -36,10 +36,10 @@ size_t GetFreeHeap_() {
 }
 
 int Nextion::upload_range(int range_start) {
-  ESP_LOGVV(TAG, "url: %s", this->tft_url_.c_str());
+  ESP_LOGV(TAG, "url: %s", this->tft_url_.c_str());
   uint range_size = this->tft_size_ - range_start;
-  ESP_LOGVV(TAG, "tft_size_: %i", this->tft_size_);
-  ESP_LOGVV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "tft_size_: %i", this->tft_size_);
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
   int range_end = (range_start == 0) ? std::min(this->tft_size_, 16383) : this->tft_size_;
   if (range_size <= 0 or range_end <= range_start) {
     ESP_LOGE(TAG, "Invalid range");
@@ -144,7 +144,7 @@ int Nextion::upload_range(int range_start) {
 
   ESP_LOGV(TAG, "Allocate buffer");
   uint8_t *buffer = new uint8_t[4096];
-  ESP_LOGVV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
   if (buffer == nullptr) {
     ESP_LOGE(TAG, "Failed to allocate memory for buffer");
   } else {
@@ -157,7 +157,7 @@ int Nextion::upload_range(int range_start) {
       #elif defined(USE_ESP_IDF)
       int read_len = esp_http_client_read(client, reinterpret_cast<char *>(buffer), 4096);
       #endif  // ARDUINO vs USE_ESP_IDF
-      ESP_LOGVV(TAG, "Read %d bytes from HTTP client, writing to UART", read_len);
+      ESP_LOGV(TAG, "Read %d bytes from HTTP client, writing to UART", read_len);
       if (read_len > 0) {
         this->write_array(buffer, read_len);
         this->recv_ret_string_(recv_string, 5000, true);
@@ -180,7 +180,7 @@ int Nextion::upload_range(int range_start) {
             // Deallocate the buffer when done
             ESP_LOGV(TAG, "Deallocate buffer");
             delete[] buffer;
-            ESP_LOGVV(TAG, "Memory for buffer deallocated");
+            ESP_LOGV(TAG, "Memory for buffer deallocated");
             ESP_LOGV(TAG, "Close http client");
             #ifdef ARDUINO
             client.end();
@@ -188,7 +188,7 @@ int Nextion::upload_range(int range_start) {
             esp_http_client_close(client);
             esp_http_client_cleanup(client);
             #endif  // ARDUINO vs USE_ESP_IDF
-            ESP_LOGVV(TAG, "Client closed");
+            ESP_LOGV(TAG, "Client closed");
             return result;
           }
         } else if (recv_string[0] != 0x05) {  // 0x05 == "ok"
@@ -197,7 +197,7 @@ int Nextion::upload_range(int range_start) {
               format_hex_pretty(reinterpret_cast<const uint8_t *>(recv_string.data()), recv_string.size()).c_str());
           ESP_LOGV(TAG, "Deallocate buffer");
           delete[] buffer;
-          ESP_LOGVV(TAG, "Memory for buffer deallocated");
+          ESP_LOGV(TAG, "Memory for buffer deallocated");
           ESP_LOGV(TAG, "Close http client");
           #ifdef ARDUINO
           client.end();
@@ -205,7 +205,7 @@ int Nextion::upload_range(int range_start) {
           esp_http_client_close(client);
           esp_http_client_cleanup(client);
           #endif  // ARDUINO vs USE_ESP_IDF
-          ESP_LOGVV(TAG, "Client closed");
+          ESP_LOGV(TAG, "Client closed");
           return -1;
         }
 
@@ -222,7 +222,7 @@ int Nextion::upload_range(int range_start) {
     // Deallocate the buffer when done
     ESP_LOGV(TAG, "Deallocate buffer");
     delete[] buffer;
-    ESP_LOGVV(TAG, "Memory for buffer deallocated");
+    ESP_LOGV(TAG, "Memory for buffer deallocated");
   }
   ESP_LOGV(TAG, "Close http client");
   #ifdef ARDUINO
@@ -231,7 +231,7 @@ int Nextion::upload_range(int range_start) {
   esp_http_client_close(client);
   esp_http_client_cleanup(client);
   #endif  // ARDUINO vs USE_ESP_IDF
-  ESP_LOGVV(TAG, "Client closed");
+  ESP_LOGV(TAG, "Client closed");
   return range_end + 1;
 }
 
@@ -253,7 +253,7 @@ bool Nextion::upload_tft() {
 
   // Define the configuration for the HTTP client
   ESP_LOGV(TAG, "Initializing HTTP client");
-  ESP_LOGVV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
   #ifdef ARDUINO
   HTTPClient http;
   http.setTimeout(15000);  // Yes 15 seconds.... Helps 8266s along
@@ -326,7 +326,7 @@ bool Nextion::upload_tft() {
 
   // Perform the HTTP request
   ESP_LOGV(TAG, "Check if the client could connect");
-  ESP_LOGVV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
   esp_err_t err = esp_http_client_perform(http);
   if (err != ESP_OK) {
     ESP_LOGE(TAG, "HTTP request failed: %s", esp_err_to_name(err));
@@ -336,22 +336,22 @@ bool Nextion::upload_tft() {
 
   // Check the HTTP Status Code
   ESP_LOGV(TAG, "Check the HTTP Status Code");
-  ESP_LOGVV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
   int status_code = esp_http_client_get_status_code(http);
   ESP_LOGV(TAG, "HTTP Status Code: %d", status_code);
   this->tft_size_ = esp_http_client_get_content_length(http);
-  ESP_LOGD(TAG, "TFT file size: %zu", this->tft_size_);
-
+  
   ESP_LOGD(TAG, "Close HTTP connection");
-  ESP_LOGVV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
   esp_http_client_close(http);
   esp_http_client_cleanup(http);
-  ESP_LOGVV(TAG, "Connection closed");
-  ESP_LOGVV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Connection closed");
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
   #endif  // ARDUINO vs USE_ESP_IDF
 
+  ESP_LOGD(TAG, "TFT file size: %zu bytes", this->tft_size_);
   if (this->tft_size_ < 4096) {
-    ESP_LOGE(TAG, "File size check failed. Size: %zu", this->tft_size_);
+    ESP_LOGE(TAG, "File size check failed.");
     return this->upload_end(false);
   } else {
     ESP_LOGV(TAG, "File size check passed. Proceeding...");
@@ -362,7 +362,7 @@ bool Nextion::upload_tft() {
 
   // The Nextion will ignore the update command if it is sleeping
   ESP_LOGV(TAG, "Wake-up Nextion");
-  ESP_LOGVV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
   this->send_command_("sleep=0");
   this->set_backlight_brightness(1.0);
   vTaskDelay(pdMS_TO_TICKS(250));  // NOLINT
@@ -376,14 +376,14 @@ bool Nextion::upload_tft() {
 
   // Clear serial receive buffer
   ESP_LOGV(TAG, "Clear serial receive buffer");
-  ESP_LOGVV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
   uint8_t d;
   while (this->available()) {
     this->read_byte(&d);
   };
 
   ESP_LOGV(TAG, "Send update instruction: %s", command);
-  ESP_LOGVV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
   this->send_command_(command);
 
   std::string response;
@@ -394,7 +394,7 @@ bool Nextion::upload_tft() {
   ESP_LOGD(TAG, "Upgrade response is [%s] - %zu bytes",
            format_hex_pretty(reinterpret_cast<const uint8_t *>(response.data()), response.size()).c_str(),
            response.length());
-  ESP_LOGVV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
 
   if (response.find(0x05) != std::string::npos) {
     ESP_LOGV(TAG, "Preparation for tft update done");
@@ -406,7 +406,7 @@ bool Nextion::upload_tft() {
   delay(500);
   ESP_LOGD(TAG, "Updating TFT to Nextion:");
   ESP_LOGD(TAG, "  URL: %s", this->tft_url_.c_str());
-  ESP_LOGD(TAG, "  File size: %d", this->content_length_);
+  ESP_LOGD(TAG, "  File size: %d bytes", this->content_length_);
   ESP_LOGD(TAG, "  Free heap: %" PRIu32, GetFreeHeap_());
 
   delay(500);
@@ -430,7 +430,7 @@ bool Nextion::upload_tft() {
 }
 
 bool Nextion::upload_end(bool successful) {
-  ESP_LOGVV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
   this->is_updating_ = false;
   ESP_LOGD(TAG, "Restarting Nextion");
   this->soft_reset();
