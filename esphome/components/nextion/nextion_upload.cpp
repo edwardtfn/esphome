@@ -82,10 +82,10 @@ int Nextion::upload_range(int range_start) {
   while (tries <= 5) {
     ++tries;
   #ifdef USE_ESP32
-    begin_status = http->begin(this->tft_url_.c_str());
+    begin_status = client->begin(this->tft_url_.c_str());
   #endif
   #ifdef USE_ESP8266
-    begin_status = http->begin(*this->get_wifi_client_(), this->tft_url_.c_str());
+    begin_status = client->begin(*this->get_wifi_client_(), this->tft_url_.c_str());
   #endif
     if (!begin_status) {
       ESP_LOGD(TAG, "upload_by_chunks_: connection failed");
