@@ -300,7 +300,7 @@ bool Nextion::upload_tft() {
   }
 
   if ((code != 200 && code != 206) || tries > 5) {
-    return this->upload_end_(false);
+    return this->upload_end(false);
   }
 
   String content_range_string = http.header("Content-Range");
