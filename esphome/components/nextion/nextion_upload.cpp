@@ -102,7 +102,7 @@ int Nextion::upload_range(int range_start) {
     ESP_LOGW(TAG, "HTTP Request failed; Error: %s, retries(%d/5)",
              HTTPClient::errorToString(code).c_str(), tries);
     client.end();
-    App.feed_wdt();
+    //App.feed_wdt();
     delay(500);  // NOLINT
   }
 
@@ -135,7 +135,7 @@ int Nextion::upload_range(int range_start) {
     while (true) {
       int bufferSize = (this->content_length_ < 4096) ? this->content_length_ : 4096;  // Limits buffer to the remaining data
       ESP_LOGV(TAG, "Fetching %d bytes from HTTP client", bufferSize);
-      App.feed_wdt();
+      //App.feed_wdt();
       #ifdef ARDUINO
       unsigned long startTime = millis(); // Start time for timeout calculation
       const unsigned long timeout = 5000; // Maximum timeout in milliseconds
@@ -146,7 +146,7 @@ int Nextion::upload_range(int range_start) {
           partial_read_len = client.getStreamPtr()->readBytes(reinterpret_cast<char *>(buffer) + read_len, bufferSize - read_len);
           read_len += partial_read_len;
           if (partial_read_len > 0) {
-            App.feed_wdt();
+            //App.feed_wdt();
             delay(2);
             continue;
           }
@@ -307,13 +307,13 @@ bool Nextion::upload_tft() {
   int code = http.GET();
   delay(100);  // NOLINT
 
-  App.feed_wdt();
+  //App.feed_wdt();
   while (code != 200 && code != 206 && tries <= 5) {
     ESP_LOGW(TAG, "HTTP Request failed; URL: %s; Error: %s, retrying (%d/5)", this->tft_url_.c_str(),
              HTTPClient::errorToString(code).c_str(), tries);
 
     delay(250);  // NOLINT
-    App.feed_wdt();
+    //App.feed_wdt();
     code = http.GET();
     ++tries;
   }
@@ -386,7 +386,7 @@ bool Nextion::upload_tft() {
   this->set_backlight_brightness(1.0);
   vTaskDelay(pdMS_TO_TICKS(250));  // NOLINT
 
-  App.feed_wdt();
+  //App.feed_wdt();
   char command[128];
   // Tells the Nextion the content length of the tft file and baud rate it will be sent at
   // Once the Nextion accepts the command it will wait until the file is successfully uploaded
@@ -439,7 +439,7 @@ bool Nextion::upload_tft() {
       ESP_LOGE(TAG, "Error updating Nextion!");
       return this->upload_end(false);
     }
-    App.feed_wdt();
+    //App.feed_wdt();
     ESP_LOGV(TAG, "Free heap: %" PRIu32 ", Bytes left: %d", GetFreeHeap_(), this->content_length_);
   }
 
