@@ -149,13 +149,24 @@ int Nextion::upload_range(int range_start) {
     ESP_LOGE(TAG, "Failed to allocate memory for buffer");
   } else {
     ESP_LOGV(TAG, "Memory for buffer allocated successfully");
-
+    int bufferSize;
     while (true) {
+      bufferSize = (this->content_length_ < 4096) ? this->content_length_ : 4096;  // Limits buffer to the remaining data
       App.feed_wdt();
       #ifdef ARDUINO
-      int read_len = client.getStreamPtr()->readBytes(reinterpret_cast<char *>(buffer), 4096);
+      int read_len = 0;
+      int partial_read_len = 0;
+      while (read_len < bufferSize && millis() - startTime < timeout) {
+          if (client.available() > 0) {
+              partial_read_len = client.getStreamPtr()->readBytes(reinterpret_cast<char *>(buffer) + read_len, bufferSize - read_len);
+              read_len += partial_read_len;
+              if (partial_read_len > 0) {
+                  // Update your progress monitoring or handling here if needed
+              }
+          }
+      }
       #elif defined(USE_ESP_IDF)
-      int read_len = esp_http_client_read(client, reinterpret_cast<char *>(buffer), 4096);
+      int read_len = esp_http_client_read(client, reinterpret_cast<char *>(buffer), bufferSize);
       #endif  // ARDUINO vs USE_ESP_IDF
       ESP_LOGV(TAG, "Read %d bytes from HTTP client, writing to UART", read_len);
       if (read_len > 0) {
