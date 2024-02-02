@@ -214,6 +214,7 @@ int Nextion::upload_range(int range_start) {
       int readtry = 20;
       while (recv_string.empty() and readtry>0) {
         this->recv_ret_string_(recv_string, 500, true);
+        this->flush();
         readtry--;
       }
       this->content_length_ -= read_len;
