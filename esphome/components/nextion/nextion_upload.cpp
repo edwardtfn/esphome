@@ -199,7 +199,7 @@ int Nextion::upload_range(int range_start) {
     }
     ESP_LOGV(TAG, "Read %d bytes from HTTP client, writing to UART", read_len);
     if (read_len > 0) {
-      const int UARTchunkSize = 16; // Maximum chunk size
+      const int UARTchunkSize = 512; // Maximum chunk size
       int bytesSent = 0; // Counter for bytes already sent
 
       while (bytesSent < read_len) {
@@ -210,6 +210,7 @@ int Nextion::upload_range(int range_start) {
           // Optional: delay between chunks if required for stability
           //delay(10); // Adjust based on your requirements and testing
       }
+      this->flush();
       this->recv_ret_string_(recv_string, 2000, true);
       this->content_length_ -= read_len;
       ESP_LOGD(TAG, "Uploaded %0.2f %%, remaining %d bytes, free heap: %" PRIu32 " bytes",
