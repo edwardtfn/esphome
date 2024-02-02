@@ -158,17 +158,36 @@ int Nextion::upload_range(int range_start) {
       int read_len = 0;
       int partial_read_len = 0;
       while (read_len < bufferSize && millis() - startTime < timeout) {
-          if (client.available() > 0) {
-              partial_read_len = client.getStreamPtr()->readBytes(reinterpret_cast<char *>(buffer) + read_len, bufferSize - read_len);
-              read_len += partial_read_len;
-              if (partial_read_len > 0) {
-                  // Update your progress monitoring or handling here if needed
-              }
+        if (client.getStreamPtr().available() > 0) {
+          partial_read_len = client.getStreamPtr()->readBytes(reinterpret_cast<char *>(buffer) + read_len, bufferSize - read_len);
+          read_len += partial_read_len;
+          if (partial_read_len > 0) {
+            App.feed_wdt();
+            delay(2);
+            continue;
           }
+        }
       }
       #elif defined(USE_ESP_IDF)
       int read_len = esp_http_client_read(client, reinterpret_cast<char *>(buffer), bufferSize);
       #endif  // ARDUINO vs USE_ESP_IDF
+      if (read_len != bufferSize) {
+        // Did not receive the full package within the timeout period
+        ESP_LOGE(TAG, "Failed to read full package, received only %d of %d bytes", read_len, bufferSize);
+        // Deallocate the buffer when done
+        ESP_LOGV(TAG, "Deallocate buffer");
+        delete[] buffer;
+        ESP_LOGV(TAG, "Memory for buffer deallocated");
+        ESP_LOGV(TAG, "Close http client");
+        #ifdef ARDUINO
+        client.end();
+        #elif defined(USE_ESP_IDF)
+        esp_http_client_close(client);
+        esp_http_client_cleanup(client);
+        #endif  // ARDUINO vs USE_ESP_IDF
+        ESP_LOGV(TAG, "Client closed");
+        return -1;
+      }
       ESP_LOGV(TAG, "Read %d bytes from HTTP client, writing to UART", read_len);
       if (read_len > 0) {
         this->write_array(buffer, read_len);
