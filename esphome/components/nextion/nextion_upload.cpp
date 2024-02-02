@@ -82,10 +82,10 @@ int Nextion::upload_range(int range_start) {
   while (tries <= 5) {
     ++tries;
   #ifdef USE_ESP32
-    begin_status = client->begin(this->tft_url_.c_str());
+    begin_status = client.begin(this->tft_url_.c_str());
   #endif
   #ifdef USE_ESP8266
-    begin_status = client->begin(*this->get_wifi_client_(), this->tft_url_.c_str());
+    begin_status = client.begin(*this->get_wifi_client_(), this->tft_url_.c_str());
   #endif
     if (!begin_status) {
       ESP_LOGD(TAG, "upload_by_chunks_: connection failed");
@@ -93,7 +93,7 @@ int Nextion::upload_range(int range_start) {
       continue;
     }
 
-    client->addHeader("Range", range_header);
+    client.addHeader("Range", range_header);
 
     code = client->GET();
     if (code == 200 || code == 206) {
@@ -101,13 +101,13 @@ int Nextion::upload_range(int range_start) {
     }
     ESP_LOGW(TAG, "HTTP Request failed; Error: %s, retries(%d/5)",
              HTTPClient::errorToString(code).c_str(), tries);
-    client->end();
+    client.end();
     App.feed_wdt();
     delay(500);  // NOLINT
   }
 
   if (tries > 5 or !begin_status) {
-    client->end();
+    client.end();
     return -1;
   }
   #elif defined(USE_ESP_IDF)
@@ -124,7 +124,7 @@ int Nextion::upload_range(int range_start) {
 
   ESP_LOGV(TAG, "Fetch content length");
   #ifdef ARDUINO
-  int content_length = client->getStreamPtr()->available();
+  int content_length = client.getStreamPtr()->available();
   #elif defined(USE_ESP_IDF)
   int content_length = esp_http_client_fetch_headers(client);
   #endif  // ARDUINO vs USE_ESP_IDF
@@ -132,7 +132,7 @@ int Nextion::upload_range(int range_start) {
   if (content_length <= 0) {
     ESP_LOGE(TAG, "Failed to get content length: %d", content_length);
     #ifdef ARDUINO
-    client->end();
+    client.end();
     #elif defined(USE_ESP_IDF)
     esp_http_client_cleanup(client);
     #endif  // ARDUINO vs USE_ESP_IDF
@@ -183,7 +183,7 @@ int Nextion::upload_range(int range_start) {
             ESP_LOGVV(TAG, "Memory for buffer deallocated");
             ESP_LOGV(TAG, "Close http client");
             #ifdef ARDUINO
-            client->end();
+            client.end();
             #elif defined(USE_ESP_IDF)
             esp_http_client_close(client);
             esp_http_client_cleanup(client);
@@ -200,7 +200,7 @@ int Nextion::upload_range(int range_start) {
           ESP_LOGVV(TAG, "Memory for buffer deallocated");
           ESP_LOGV(TAG, "Close http client");
           #ifdef ARDUINO
-          client->end();
+          client.end();
           #elif defined(USE_ESP_IDF)
           esp_http_client_close(client);
           esp_http_client_cleanup(client);
@@ -226,7 +226,7 @@ int Nextion::upload_range(int range_start) {
   }
   ESP_LOGV(TAG, "Close http client");
   #ifdef ARDUINO
-  client->end();
+  client.end();
   #elif defined(USE_ESP_IDF)
   esp_http_client_close(client);
   esp_http_client_cleanup(client);
