@@ -169,7 +169,6 @@ int Nextion::upload_range(int range_start) {
     const unsigned long timeout = 5000;
     int read_len = 0;
     int partial_read_len = 0;
-    std::vector<uint8_t> buffer(4096);
     while (read_len < buffer.size() && millis() - startTime < timeout) {
       if (client.getStreamPtr()->available() > 0) {
         partial_read_len = client.getStreamPtr()->readBytes(reinterpret_cast<char *>(buffer.data()) + read_len, buffer.size() - read_len);
