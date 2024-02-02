@@ -158,7 +158,7 @@ int Nextion::upload_range(int range_start) {
       int read_len = 0;
       int partial_read_len = 0;
       while (read_len < bufferSize && millis() - startTime < timeout) {
-        if (client.getStreamPtr().available() > 0) {
+        if (client.getStreamPtr()->available() > 0) {
           partial_read_len = client.getStreamPtr()->readBytes(reinterpret_cast<char *>(buffer) + read_len, bufferSize - read_len);
           read_len += partial_read_len;
           if (partial_read_len > 0) {
