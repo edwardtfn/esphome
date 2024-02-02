@@ -124,7 +124,7 @@ int Nextion::upload_range(int range_start) {
 
   ESP_LOGV(TAG, "Fetch content length");
   #ifdef ARDUINO
-  int content_length = client.getStreamPtr()->available();
+  int content_length = range_end - range_start;  //client.getStreamPtr()->available();
   #elif defined(USE_ESP_IDF)
   int content_length = esp_http_client_fetch_headers(client);
   #endif  // ARDUINO vs USE_ESP_IDF
@@ -159,13 +159,13 @@ int Nextion::upload_range(int range_start) {
   }
   while (true) {
     App.feed_wdt();
+    int bufferSize = std::min(this->content_length_, 4096);  // Limits buffer to the remaining data
+    ESP_LOGV(TAG, "Fetching %d bytes from HTTP client", bufferSize);
     #ifdef ARDUINO
-    int bufferSize = (this->content_length_ < 4096) ? this->content_length_ : 4096;  // Limits buffer to the remaining data
     unsigned long startTime = millis(); // Start time for timeout calculation
     const unsigned long timeout = 5000; // Maximum timeout in milliseconds
     int read_len = 0;
     int partial_read_len = 0;
-    ESP_LOGV(TAG, "Fetching %d bytes from HTTP client", bufferSize);
     while (read_len < bufferSize && millis() - startTime < timeout) {
       if (client.getStreamPtr()->available() > 0) {
         partial_read_len = client.getStreamPtr()->readBytes(reinterpret_cast<char *>(buffer) + read_len, bufferSize - read_len);
@@ -177,6 +177,9 @@ int Nextion::upload_range(int range_start) {
         }
       }
     }
+    #elif defined(USE_ESP_IDF)
+    int read_len = esp_http_client_read(client, reinterpret_cast<char *>(buffer), bufferSize);
+    #endif  // ARDUINO vs USE_ESP_IDF
     if (read_len != bufferSize) {
       // Did not receive the full package within the timeout period
       ESP_LOGE(TAG, "Failed to read full package, received only %d of %d bytes", read_len, bufferSize);
@@ -185,13 +188,15 @@ int Nextion::upload_range(int range_start) {
       delete[] buffer;
       ESP_LOGV(TAG, "Memory for buffer deallocated");
       ESP_LOGV(TAG, "Close http client");
+      #ifdef ARDUINO
       client.end();
+      #elif defined(USE_ESP_IDF)
+      esp_http_client_close(client);
+      esp_http_client_cleanup(client);
+      #endif  // ARDUINO vs USE_ESP_IDF
       ESP_LOGV(TAG, "Client closed");
       return -1;
     }
-    #elif defined(USE_ESP_IDF)
-    int read_len = esp_http_client_read(client, reinterpret_cast<char *>(buffer), 4096);
-    #endif  // ARDUINO vs USE_ESP_IDF
     ESP_LOGV(TAG, "Read %d bytes from HTTP client, writing to UART", read_len);
     if (read_len > 0) {
       const int UARTchunkSize = 512; // Maximum chunk size
