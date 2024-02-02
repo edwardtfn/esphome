@@ -142,27 +142,27 @@ int Nextion::upload_range(int range_start) {
   int total_read_len = 0, read_len;
   std::string recv_string;
 
-  ESP_LOGV(TAG, "Allocate buffer");
-  std::vector<uint8_t> buffer(4096); // Attempt to allocate 4096 bytes
-  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
-
-  // Check if the allocation was successful by comparing the size
-  if (buffer.size() != 4096) {
-    ESP_LOGE(TAG, "Failed to allocate memory for buffer");
-    // Clean-up code as necessary, for example:
-    #ifdef ARDUINO
-    client.end();
-    #elif defined(USE_ESP_IDF)
-    esp_http_client_close(client);
-    esp_http_client_cleanup(client);
-    #endif
-    return -1; // Indicate failure
-  } else {
-    ESP_LOGV(TAG, "Memory for buffer allocated successfully");
-  }
   while (true) {
     App.feed_wdt();
     int bufferSize = std::min(this->content_length_, 4096);  // Limits buffer to the remaining data
+    ESP_LOGV(TAG, "Allocate buffer");
+    std::vector<uint8_t> buffer(bufferSize); // Attempt to allocate up to 4096 bytes
+    ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+
+    // Check if the allocation was successful by comparing the size
+    if (buffer.size() != bufferSize) {
+      ESP_LOGE(TAG, "Failed to allocate memory for buffer");
+      // Clean-up code as necessary, for example:
+      #ifdef ARDUINO
+      client.end();
+      #elif defined(USE_ESP_IDF)
+      esp_http_client_close(client);
+      esp_http_client_cleanup(client);
+      #endif
+      return -1; // Indicate failure
+    } else {
+      ESP_LOGV(TAG, "Memory for buffer allocated successfully");
+    }
     ESP_LOGV(TAG, "Fetching %d bytes from HTTP client", bufferSize);
     #ifdef ARDUINO
     unsigned long startTime = millis();
@@ -181,12 +181,11 @@ int Nextion::upload_range(int range_start) {
       }
     }
     #elif defined(USE_ESP_IDF)
-    std::vector<uint8_t> buffer(4096);
     int read_len = esp_http_client_read(client, reinterpret_cast<char *>(buffer.data()), buffer.size());
     #endif
-    if (read_len != bufferSize) {
+    if (read_len != buffer.size()) {
       // Did not receive the full package within the timeout period
-      ESP_LOGE(TAG, "Failed to read full package, received only %d of %d bytes", read_len, bufferSize);
+      ESP_LOGE(TAG, "Failed to read full package, received only %d of %d bytes", read_len, buffer.size());
       ESP_LOGV(TAG, "Close http client");
       #ifdef ARDUINO
       client.end();
@@ -200,17 +199,6 @@ int Nextion::upload_range(int range_start) {
     ESP_LOGV(TAG, "Read %d bytes from HTTP client, writing to UART", read_len);
     if (read_len > 0) {
       recv_string.clear();
-      //const int UARTchunkSize = 512; // Maximum chunk size
-      //int bytesSent = 0; // Counter for bytes already sent
-
-      //while (bytesSent < read_len) {
-      //  int currentChunkSize = std::min(UARTchunkSize, read_len - bytesSent);
-      //  this->write_array(buffer + bytesSent, currentChunkSize);
-      //  bytesSent += currentChunkSize;
-      //  ESP_LOGV(TAG, "%d of %d bytes sent to Nextion", bytesSent, read_len);
-      //  // Optional: delay between chunks if required for stability
-      //  delay(10); // Adjust based on your requirements and testing
-      //}
       this->write_array(buffer);
       int readtry = 20;
       while (recv_string.empty() and readtry>0) {
