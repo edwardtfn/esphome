@@ -1074,34 +1074,6 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
 #endif
   int content_length_ = 0;
   int tft_size_ = 0;
-#ifdef ARDUINO
-  /**
-   * will request chunk_size chunks from the web server
-   * and send each to the nextion
-   * @param HTTPClient http HTTP client handler.
-   * @param int range_start Position of next byte to transfer.
-   * @return position of last byte transferred, -1 for failure.
-   */
-  int upload_by_chunks_(HTTPClient *http, int range_start);
-
-  bool upload_with_range_(uint32_t range_start, uint32_t range_end);
-
-  /**
-   * start update tft file to nextion.
-   *
-   * @param const uint8_t *file_buf
-   * @param size_t buf_size
-   * @return true if success, false for failure.
-   */
-  bool upload_from_buffer_(const uint8_t *file_buf, size_t buf_size);
-  /**
-   * Ends the upload process, restart Nextion and, if successful,
-   * restarts ESP
-   * @param bool url successful True: Transfer completed successfuly, False: Transfer failed.
-   * @return bool True: Transfer completed successfuly, False: Transfer failed.
-   */
-  bool upload_end_(bool successful);
-#elif defined(USE_ESP_IDF)
   /**
    * will request 4096 bytes chunks from the web server
    * and send each to Nextion
@@ -1117,8 +1089,6 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
    * @return bool True: Transfer completed successfuly, False: Transfer failed.
    */
   bool upload_end(bool successful);
-#endif  // ARDUINO vs ESP-IDF
-
 #endif  // USE_NEXTION_TFT_UPLOAD
 
   bool get_is_connected_() { return this->is_connected_; }

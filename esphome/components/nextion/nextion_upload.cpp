@@ -255,8 +255,8 @@ bool Nextion::upload_tft() {
   ESP_LOGV(TAG, "Initializing HTTP client");
   ESP_LOGVV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
   #ifdef ARDUINO
-  HTTPClient client;
-  client.setTimeout(15000);  // Yes 15 seconds.... Helps 8266s along
+  HTTPClient http;
+  http.setTimeout(15000);  // Yes 15 seconds.... Helps 8266s along
   bool begin_status = false;
   #ifdef USE_ESP8266
   #if USE_ARDUINO_VERSION_CODE >= VERSION_CODE(2, 7, 0)
