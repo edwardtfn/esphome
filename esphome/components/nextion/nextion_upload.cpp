@@ -95,7 +95,7 @@ int Nextion::upload_range(int range_start) {
 
     client.addHeader("Range", range_header);
 
-    code = client->GET();
+    code = client.GET();
     if (code == 200 || code == 206) {
       break;
     }
@@ -153,7 +153,7 @@ int Nextion::upload_range(int range_start) {
     while (true) {
       App.feed_wdt();
       #ifdef ARDUINO
-      int read_len = client->getStreamPtr()->readBytes(reinterpret_cast<char *>(buffer), 4096);
+      int read_len = client.getStreamPtr()->readBytes(reinterpret_cast<char *>(buffer), 4096);
       #elif defined(USE_ESP_IDF)
       int read_len = esp_http_client_read(client, reinterpret_cast<char *>(buffer), 4096);
       #endif  // ARDUINO vs USE_ESP_IDF
