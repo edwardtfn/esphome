@@ -208,9 +208,9 @@ int Nextion::upload_range(int range_start) {
           bytesSent += currentChunkSize;
           ESP_LOGV(TAG, "%d of %d bytes sent to Nextion", bytesSent, read_len);
           // Optional: delay between chunks if required for stability
-          // delay(10); // Adjust based on your requirements and testing
+          delay(10); // Adjust based on your requirements and testing
       }
-      this->recv_ret_string_(recv_string, 5000, true);
+      this->recv_ret_string_(recv_string, 2000, true);
       this->content_length_ -= read_len;
       ESP_LOGD(TAG, "Uploaded %0.2f %%, remaining %d bytes, free heap: %" PRIu32 " bytes",
                100.0 * (this->tft_size_ - this->content_length_) / this->tft_size_, this->content_length_,
