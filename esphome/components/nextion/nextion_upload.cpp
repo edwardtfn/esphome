@@ -162,7 +162,7 @@ int Nextion::upload_range(int range_start) {
         this->write_array(buffer, read_len);
         this->recv_ret_string_(recv_string, 5000, true);
         this->content_length_ -= read_len;
-        ESP_LOGD(TAG, "Uploaded %0.2f %%, remaining %d bytes, heap is %" PRIu32 " bytes",
+        ESP_LOGD(TAG, "Uploaded %0.2f %%, remaining %d bytes, free heap: %" PRIu32 " bytes",
                  100.0 * (this->tft_size_ - this->content_length_) / this->tft_size_, this->content_length_,
                  GetFreeHeap_());
 
@@ -258,6 +258,9 @@ bool Nextion::upload_tft() {
   HTTPClient http;
   http.setTimeout(15000);  // Yes 15 seconds.... Helps 8266s along
   bool begin_status = false;
+  #ifdef USE_ESP32
+  begin_status = http.begin(this->tft_url_.c_str());
+  #endif
   #ifdef USE_ESP8266
   #if USE_ARDUINO_VERSION_CODE >= VERSION_CODE(2, 7, 0)
   client.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
@@ -267,6 +270,7 @@ bool Nextion::upload_tft() {
   #if USE_ARDUINO_VERSION_CODE >= VERSION_CODE(2, 6, 0)
   client.setRedirectLimit(3);
   #endif
+  begin_status = http.begin(*this->get_wifi_client_(), this->tft_url_.c_str());
   #endif  // USE_ESP8266
   if (!begin_status) {
     this->is_updating_ = false;
