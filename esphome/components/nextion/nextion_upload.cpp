@@ -149,11 +149,12 @@ int Nextion::upload_range(int range_start) {
     ESP_LOGE(TAG, "Failed to allocate memory for buffer");
   } else {
     ESP_LOGV(TAG, "Memory for buffer allocated successfully");
-    int bufferSize;
     while (true) {
-      bufferSize = (this->content_length_ < 4096) ? this->content_length_ : 4096;  // Limits buffer to the remaining data
+      int bufferSize = (this->content_length_ < 4096) ? this->content_length_ : 4096;  // Limits buffer to the remaining data
       App.feed_wdt();
       #ifdef ARDUINO
+      unsigned long startTime = millis(); // Start time for timeout calculation
+      const unsigned long timeout = 5000; // Maximum timeout in milliseconds
       int read_len = 0;
       int partial_read_len = 0;
       while (read_len < bufferSize && millis() - startTime < timeout) {
