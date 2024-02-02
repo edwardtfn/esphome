@@ -31,7 +31,7 @@ uint32_t GetFreeHeap_() {
   #ifdef ARDUINO
   return ESP.getFreeHeap();
   #elif defined(USE_ESP_IDF)
-  return GetFreeHeap_();
+  return esp_get_free_heap_size();
   #endif  // ARDUINO vs USE_ESP_IDF
 }
 
