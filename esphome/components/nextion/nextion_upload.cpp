@@ -178,7 +178,7 @@ int Nextion::upload_range(int range_start) {
         int bytesSent = 0; // Counter for bytes already sent
 
         while (bytesSent < read_len) {
-            int currentChunkSize = min(UARTchunkSize, read_len - bytesSent);
+            int currentChunkSize = std::min(UARTchunkSize, read_len - bytesSent);
             this->write_array(buffer + bytesSent, currentChunkSize);
             bytesSent += currentChunkSize;
             ESP_LOGV(TAG, "%d of %d bytes sent to Nextion", bytesSent, read_len);
