@@ -214,6 +214,7 @@ int Nextion::upload_range(int range_start) {
       this->write_array(buffer);
       int readtry = 20;
       while (recv_string.empty() and readtry>0) {
+        App.feed_wdt();
         this->recv_ret_string_(recv_string, 500, true);
         this->flush();
         readtry--;
@@ -234,7 +235,6 @@ int Nextion::upload_range(int range_start) {
         if (result > 0) {
           ESP_LOGI(TAG, "Nextion reported new range %" PRIu32, result);
           this->content_length_ = this->tft_size_ - result;
-          // Deallocate the buffer when done
           ESP_LOGV(TAG, "Close http client");
           #ifdef ARDUINO
           client.end();
@@ -270,7 +270,6 @@ int Nextion::upload_range(int range_start) {
     }
   }
 
-  // Deallocate the buffer when done
   ESP_LOGV(TAG, "Close http client");
   #ifdef ARDUINO
   client.end();
