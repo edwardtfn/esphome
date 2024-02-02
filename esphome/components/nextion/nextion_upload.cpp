@@ -152,9 +152,6 @@ int Nextion::upload_range(int range_start) {
           }
         }
       }
-      #elif defined(USE_ESP_IDF)
-      int read_len = esp_http_client_read(client, reinterpret_cast<char *>(buffer), 4096);
-      #endif  // ARDUINO vs USE_ESP_IDF
       if (read_len != bufferSize) {
         // Did not receive the full package within the timeout period
         ESP_LOGE(TAG, "Failed to read full package, received only %d of %d bytes", read_len, bufferSize);
@@ -163,15 +160,13 @@ int Nextion::upload_range(int range_start) {
         delete[] buffer;
         ESP_LOGV(TAG, "Memory for buffer deallocated");
         ESP_LOGV(TAG, "Close http client");
-        #ifdef ARDUINO
         client.end();
-        #elif defined(USE_ESP_IDF)
-        esp_http_client_close(client);
-        esp_http_client_cleanup(client);
-        #endif  // ARDUINO vs USE_ESP_IDF
         ESP_LOGV(TAG, "Client closed");
         return -1;
       }
+      #elif defined(USE_ESP_IDF)
+      int read_len = esp_http_client_read(client, reinterpret_cast<char *>(buffer), 4096);
+      #endif  // ARDUINO vs USE_ESP_IDF
       ESP_LOGV(TAG, "Read %d bytes from HTTP client, writing to UART", read_len);
       if (read_len > 0) {
         const int UARTchunkSize = 512; // Maximum chunk size
