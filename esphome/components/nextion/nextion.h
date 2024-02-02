@@ -1077,11 +1077,10 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
   /**
    * will request 4096 bytes chunks from the web server
    * and send each to Nextion
-   * @param std::string url Full url for download.
    * @param int range_start Position of next byte to transfer.
    * @return position of last byte transferred, -1 for failure.
    */
-  int upload_range(const std::string &url, int range_start);
+  int upload_range(int range_start);
   /**
    * Ends the upload process, restart Nextion and, if successful,
    * restarts ESP
