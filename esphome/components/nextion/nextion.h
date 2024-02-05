@@ -1208,14 +1208,14 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
    * @param int range_start Position of next byte to transfer (which will be updated when successful).
    * @return Nextion::TFTUploadResult result of the transfer.
    */
-  Nextion::TFTUploadResult upload_from_position(int &transfer_position);
+  TFTUploadResult upload_from_position(int &transfer_position);
   /**
    * Ends the upload process, restart Nextion and, if successful,
    * restarts ESP
    * @param Nextion::TFTUploadResult result of the transfer.
    * @return Nextion::TFTUploadResult result of the transfer.
    */
-  TFTUploadResult Nextion::upload_end(TFTUploadResult upload_results);
+  TFTUploadResult upload_end(TFTUploadResult upload_results);
 
   /**
    * Returns the ESP Free Heap memory. This is framework independent.
