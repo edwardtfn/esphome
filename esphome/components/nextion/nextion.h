@@ -1212,10 +1212,10 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
   /**
    * Ends the upload process, restart Nextion and, if successful,
    * restarts ESP
-   * @param bool url successful True: Transfer completed successfuly, False: Transfer failed.
-   * @return bool True: Transfer completed successfuly, False: Transfer failed.
+   * @param Nextion::TFTUploadResult result of the transfer.
+   * @return Nextion::TFTUploadResult result of the transfer.
    */
-  bool upload_end(bool successful);
+  Nextion::TFTUploadResult Nextion::upload_end(Nextion::TFTUploadResult upload_results);
 
   /**
    * Returns the ESP Free Heap memory. This is framework independent.

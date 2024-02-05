@@ -141,7 +141,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
     ESP_LOGD(TAG, "Range start: %i", transfer_position);
     ESP_LOGD(TAG, "Range end: %i", range_end);
     ESP_LOGD(TAG, "Range size: %i", range_size);
-    return Nextion::TFTUploadResult:ProcessError_InvalidRange;
+    return Nextion::TFTUploadResult::ProcessError_InvalidRange;
   }
 
   #ifdef ARDUINO
@@ -168,7 +168,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
   #endif  // ARDUINO vs USE_ESP_IDF
 
   char range_header[64];
-  sprintf(range_header, "bytes=%d-%d", range_start, range_end);
+  sprintf(range_header, "bytes=%d-%d", transfer_position, range_end);
   ESP_LOGV(TAG, "Requesting range: %s", range_header);
   #ifdef ARDUINO
   int tries = 1;
@@ -219,7 +219,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
 
   ESP_LOGV(TAG, "Fetch content length");
   #ifdef ARDUINO
-  int content_length = range_end - range_start;  //client.getStreamPtr()->available();
+  int content_length = range_end - transfer_position;
   #elif defined(USE_ESP_IDF)
   int content_length = esp_http_client_fetch_headers(client);
   #endif  // ARDUINO vs USE_ESP_IDF
