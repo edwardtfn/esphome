@@ -199,10 +199,12 @@ int Nextion::upload_range(int range_start) {
     if (read_len > 0) {
       recv_string.clear();
       this->write_array(buffer);
-      int readtry = 100;
+      int readtry = 20;
       while (recv_string.empty() and readtry>0) {
+        ESP_LOGV(TAG, "UART queue: %i", this->avalilable());
         App.feed_wdt();
         this->recv_ret_string_(recv_string, 500, true);
+        this->write_str("");
         this->flush();
         readtry--;
       }
