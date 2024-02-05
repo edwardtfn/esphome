@@ -107,6 +107,18 @@ uint32_t Nextion::GetFreeHeap_() {
 }
 
 bool Nextion::isValidUrl(const std::string& originalUrl) {
+    // Simplified regex that supports HTTP(S) URLs with IPv4, IPv6, and domain names.
+    // This version checks for:
+    // - Scheme: http or https
+    // - IPv6 addresses in square brackets
+    // - Optional port numbers
+    // - Basic path/query/fragment validation
+    // Note: This regex simplifies IPv6 validation and may not cover all edge cases.
+    std::regex urlRegex(
+        R"(^(https?:\/\/)(\[(([0-9A-Fa-f]{0,4}:){1,7}[0-9A-Fa-f]{0,4})\]|([a-zA-Z0-9\-\.]+))(:[0-9]{1,5})?(\/[^\s]*)?$)",
+        std::regex::icase);
+    return std::regex_match(originalUrl, urlRegex);
+
     std::string url = originalUrl;
     std::transform(url.begin(), url.end(), url.begin(),
                    [](unsigned char c){ return std::tolower(c); });
