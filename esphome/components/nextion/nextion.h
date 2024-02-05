@@ -1215,7 +1215,7 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
    * @param Nextion::TFTUploadResult result of the transfer.
    * @return Nextion::TFTUploadResult result of the transfer.
    */
-  Nextion::TFTUploadResult Nextion::upload_end(Nextion::TFTUploadResult upload_results);
+  TFTUploadResult Nextion::upload_end(TFTUploadResult upload_results);
 
   /**
    * Returns the ESP Free Heap memory. This is framework independent.
