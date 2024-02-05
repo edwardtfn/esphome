@@ -121,12 +121,14 @@ bool Nextion::isValidUrl(const std::string& originalUrl) {
         for (size_t i = domainStart; i < domainEnd; ++i) {
             char c = url[i];
             if (!std::isalnum(c) && c != '-' && c != '.') {
+                ESP_LOGE(TAG, "Invalid URL: Invalid character in domain: %c", c);
                 return false; // Invalid character in domain
             }
         }
         // Passed all checks
         return true;
     }
+    ESP_LOGE(TAG, "Invalid URL: Invalid or missing scheme");
     return false; // Invalid or missing scheme
 }
 
