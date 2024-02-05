@@ -27,7 +27,7 @@ static const char *const TAG = "nextion.upload.idf";
 // Followed guide
 // https://unofficialnextion.com/t/nextion-upload-protocol-v1-2-the-fast-one/1044/2
 
-const char* TFTUploadResultToString(Nextion::TFTUploadResult result) {
+const char* Nextion::TFTUploadResultToString(Nextion::TFTUploadResult result) {
     switch (result) {
         case Nextion::TFTUploadResult::OK:
             return "Upload successful";
@@ -98,7 +98,7 @@ const char* TFTUploadResultToString(Nextion::TFTUploadResult result) {
     }
 }
 
-uint32_t GetFreeHeap_() {
+uint32_t Nextion::GetFreeHeap_() {
   #ifdef ARDUINO
   return ESP.getFreeHeap();
   #elif defined(USE_ESP_IDF)
@@ -106,7 +106,7 @@ uint32_t GetFreeHeap_() {
   #endif  // ARDUINO vs USE_ESP_IDF
 }
 
-bool isValidUrl(const std::string& originalUrl) {
+bool Nextion::isValidUrl(const std::string& originalUrl) {
     std::string url = originalUrl;
     std::transform(url.begin(), url.end(), url.begin(),
                    [](unsigned char c){ return std::tolower(c); });
@@ -130,7 +130,7 @@ bool isValidUrl(const std::string& originalUrl) {
     return false; // Invalid or missing scheme
 }
 
-TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
+Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
   ESP_LOGV(TAG, "url: %s", this->tft_url_.c_str());
   uint range_size = this->tft_size_ - transfer_position;
   ESP_LOGV(TAG, "tft_size_: %i", this->tft_size_);
@@ -565,7 +565,7 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
   return upload_end(Nextion::TFTUploadResult::OK);
 }
 
-TFTUploadResult Nextion::upload_end(TFTUploadResult upload_results) {
+Nextion::TFTUploadResult Nextion::upload_end(Nextion::TFTUploadResult upload_results) {
   ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
   this->is_updating_ = false;
   ESP_LOGD(TAG, "Restarting Nextion");
