@@ -199,18 +199,13 @@ int Nextion::upload_range(int range_start) {
     if (read_len > 0) {
       recv_string.clear();
       this->write_array(buffer);
-      int readtry = 20;
-      while (recv_string.empty() and readtry>0) {
-        App.feed_wdt();
-        this->recv_ret_string_(recv_string, 500, true);
-        this->flush();
-        readtry--;
-      }
+      App.feed_wdt();
+      this->recv_ret_string_(recv_string, upload_first_chunk_sent_ ? 500 : 2000, true);
       this->content_length_ -= read_len;
       ESP_LOGD(TAG, "Uploaded %0.2f %%, remaining %d bytes, free heap: %" PRIu32 " bytes",
                100.0 * (this->tft_size_ - this->content_length_) / this->tft_size_, this->content_length_,
                GetFreeHeap_());
-
+      upload_first_chunk_sent_ = true;
       if (recv_string[0] == 0x08 && recv_string.size() == 5) {  // handle partial upload request
         ESP_LOGD(
             TAG, "recv_string [%s]",
@@ -284,6 +279,8 @@ bool Nextion::upload_tft() {
 
   this->is_updating_ = true;
 
+  this->set_protocol_reparse_mode(false);  // Upload must be without reparse mode as per Nextion Upload Protocol docs
+
   // Define the configuration for the HTTP client
   ESP_LOGV(TAG, "Initializing HTTP client");
   ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
@@ -308,8 +305,6 @@ bool Nextion::upload_tft() {
   if (!begin_status) {
     this->is_updating_ = false;
     ESP_LOGD(TAG, "Connection failed");
-    ExternalRAMAllocator<uint8_t> allocator(ExternalRAMAllocator<uint8_t>::ALLOW_FAILURE);
-    allocator.deallocate(this->transfer_buffer_, this->transfer_buffer_size_);
     return false;
   } else {
     ESP_LOGD(TAG, "Connected");
