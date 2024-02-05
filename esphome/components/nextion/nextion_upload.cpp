@@ -199,7 +199,7 @@ int Nextion::upload_range(int range_start) {
     if (read_len > 0) {
       recv_string.clear();
       this->write_array(buffer);
-      int readtry = 20;
+      int readtry = 100;
       while (recv_string.empty() and readtry>0) {
         App.feed_wdt();
         this->recv_ret_string_(recv_string, 500, true);
