@@ -118,7 +118,7 @@ bool Nextion::isValidUrl(const std::string& originalUrl) {
             domainEnd = url.length();
         }
 
-        bool inIPv6 = false; // Track if we're within square brackets
+        bool inIPv6 = false; // Track if we're within square brackets for IPv6
         for (size_t i = domainStart; i < domainEnd; ++i) {
             char c = url[i];
             if (c == '[') {
@@ -126,13 +126,21 @@ bool Nextion::isValidUrl(const std::string& originalUrl) {
             } else if (c == ']') {
                 inIPv6 = false;
             } else if (!std::isalnum(c) && c != '-' && c != '.' && (!inIPv6 || (inIPv6 && c != ':'))) {
+                // Before declaring the URL invalid, check if the character is a colon possibly indicating a port number
+                if (c == ':' && !inIPv6) {
+                    // Ensure the rest of the string is a valid port number
+                    size_t portStart = i + 1;
+                    size_t portEnd = url.find('/', portStart);
+                    if (portEnd == std::string::npos) portEnd = url.length();
+                    std::string port = url.substr(portStart, portEnd - portStart);
+                    if (std::all_of(port.begin(), port.end(), ::isdigit)) {
+                        // Valid port number, continue checking the rest of the URL
+                        continue;
+                    }
+                }
                 ESP_LOGE(TAG, "Invalid URL: Invalid character in domain: %c", c);
                 return false; // Invalid character in domain
             }
-        }
-        if (inIPv6) { // Misplaced or unmatched square bracket
-            ESP_LOGE(TAG, "Invalid URL: Unmatched square brackets in IPv6 address");
-            return false;
         }
         // Passed all checks
         return true;
