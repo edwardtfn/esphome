@@ -27,6 +27,77 @@ static const char *const TAG = "nextion.upload.idf";
 // Followed guide
 // https://unofficialnextion.com/t/nextion-upload-protocol-v1-2-the-fast-one/1044/2
 
+const char* TFTUploadResultToString(TFTUploadResult result) {
+    switch (result) {
+        case TFTUploadResult::OK:
+            return "Upload successful";
+
+        case TFTUploadResult::UploadInProgress:
+            return "Another upload is already in progress";
+
+        case TFTUploadResult::NetworkError_NotConnected:
+            return "Network is not connected";
+
+        // HTTP/HTTPS Errors
+        case TFTUploadResult::HttpError_InvalidUrl:
+            return "The provided URL is invalid";
+
+        case TFTUploadResult::HttpError_ConnectionFailed:
+            return "Connection to HTTP server failed";
+
+        case TFTUploadResult::HttpError_ResponseServer:
+            return "HTTP server error response";
+
+        case TFTUploadResult::HttpError_ResponseClient:
+            return "HTTP client error response";
+
+        case TFTUploadResult::HttpError_ResponseRedirection:
+            return "HTTP redirection error response";
+
+        case TFTUploadResult::HttpError_ResponseOther:
+            return "HTTP other error response";
+
+        case TFTUploadResult::HttpError_InvalidServerHeader:
+            return "HTTP server provided an invalid header";
+
+        case TFTUploadResult::HttpError_ClientInitialization:
+            return "Failed to initialize HTTP client";
+
+        case TFTUploadResult::HttpError_RequestFailed:
+            return "HTTP request failed";
+
+        case TFTUploadResult::HttpError_InvalidFileSize:
+            return "The downloaded file size did not match the expected size";
+
+        case TFTUploadResult::HttpError_FailedToFetchFullPackage:
+            return "Failed to fetch full package from HTTP server";
+
+        case TFTUploadResult::HttpError_FailedToOpenConnection:
+            return "Failed to open connection to HTTP server";
+
+        case TFTUploadResult::HttpError_FailedToGetContentLenght:
+            return "Failed to get content length from HTTP server";
+
+        // Nextion Errors
+        case TFTUploadResult::NextionError_PreparationFailed:
+            return "Preparation for TFT upload failed";
+
+        case TFTUploadResult::NextionError_InvalidResponse:
+            return "Invalid response from Nextion";
+
+        // Process Errors
+        case TFTUploadResult::ProcessError_InvalidRange:
+            return "Invalid range requested";
+
+        // Memory Errors
+        case TFTUploadResult::MemoryError_FailedToAllocate:
+            return "Failed to allocate memory";
+
+        default:
+            return "Unknown error";
+    }
+}
+
 uint32_t GetFreeHeap_() {
   #ifdef ARDUINO
   return ESP.getFreeHeap();
@@ -35,18 +106,42 @@ uint32_t GetFreeHeap_() {
   #endif  // ARDUINO vs USE_ESP_IDF
 }
 
-int Nextion::upload_range(int range_start) {
+bool isValidUrl(const std::string& originalUrl) {
+    std::string url = originalUrl;
+    std::transform(url.begin(), url.end(), url.begin(),
+                   [](unsigned char c){ return std::tolower(c); });
+
+    if (url.rfind("http://", 0) == 0 || url.rfind("https://", 0) == 0) {
+        size_t domainStart = url.find("://") + 3;
+        size_t domainEnd = url.find('/', domainStart);
+        if (domainEnd == std::string::npos) {
+            domainEnd = url.length();
+        }
+
+        for (size_t i = domainStart; i < domainEnd; ++i) {
+            char c = url[i];
+            if (!std::isalnum(c) && c != '-' && c != '.') {
+                return false; // Invalid character in domain
+            }
+        }
+        // Passed all checks
+        return true;
+    }
+    return false; // Invalid or missing scheme
+}
+
+Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
   ESP_LOGV(TAG, "url: %s", this->tft_url_.c_str());
-  uint range_size = this->tft_size_ - range_start;
+  uint range_size = this->tft_size_ - transfer_position;
   ESP_LOGV(TAG, "tft_size_: %i", this->tft_size_);
-  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
-  int range_end = (range_start == 0) ? std::min(this->tft_size_, 16383) : this->tft_size_;
-  if (range_size <= 0 or range_end <= range_start) {
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
+  int range_end = (transfer_position == 0) ? std::min(this->tft_size_, 16383) : this->tft_size_;
+  if (range_size <= 0 or range_end <= transfer_position) {
     ESP_LOGE(TAG, "Invalid range");
-    ESP_LOGD(TAG, "Range start: %i", range_start);
+    ESP_LOGD(TAG, "Range start: %i", transfer_position);
     ESP_LOGD(TAG, "Range end: %i", range_end);
     ESP_LOGD(TAG, "Range size: %i", range_size);
-    return -1;
+    return Nextion::TFTUploadResult:ProcessError_InvalidRange;
   }
 
   #ifdef ARDUINO
@@ -108,7 +203,7 @@ int Nextion::upload_range(int range_start) {
 
   if (tries > 5 or !begin_status) {
     client.end();
-    return -1;
+    return Nextion::TFTUploadResult::HttpError_RequestFailed;
   }
   #elif defined(USE_ESP_IDF)
   esp_http_client_set_header(client, "Range", range_header);
@@ -118,7 +213,7 @@ int Nextion::upload_range(int range_start) {
   if ((err = esp_http_client_open(client, 0)) != ESP_OK) {
     ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
     esp_http_client_cleanup(client);
-    return -1;
+    return Nextion::TFTUploadResult::HttpError_FailedToOpenConnection;
   }
   #endif  // ARDUINO vs USE_ESP_IDF
 
@@ -136,7 +231,7 @@ int Nextion::upload_range(int range_start) {
     #elif defined(USE_ESP_IDF)
     esp_http_client_cleanup(client);
     #endif  // ARDUINO vs USE_ESP_IDF
-    return -1;
+    return Nextion::TFTUploadResult::HttpError_FailedToGetContentLenght;
   }
 
   int total_read_len = 0, read_len;
@@ -147,7 +242,7 @@ int Nextion::upload_range(int range_start) {
     int bufferSize = std::min(this->content_length_, 4096);  // Limits buffer to the remaining data
     ESP_LOGV(TAG, "Allocate buffer");
     std::vector<uint8_t> buffer(bufferSize); // Attempt to allocate up to 4096 bytes
-    ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+    ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
 
     // Check if the allocation was successful by comparing the size
     if (buffer.size() != bufferSize) {
@@ -159,7 +254,7 @@ int Nextion::upload_range(int range_start) {
       esp_http_client_close(client);
       esp_http_client_cleanup(client);
       #endif
-      return -1; // Indicate failure
+      return Nextion::TFTUploadResult::MemoryError_FailedToAllocate;
     } else {
       ESP_LOGV(TAG, "Memory for buffer allocated successfully");
     }
@@ -193,7 +288,7 @@ int Nextion::upload_range(int range_start) {
       esp_http_client_cleanup(client);
       #endif  // ARDUINO vs USE_ESP_IDF
       ESP_LOGV(TAG, "Client closed");
-      return -1;
+      return Nextion::TFTUploadResult::HttpError_FailedToFetchFullPackage;
     }
     ESP_LOGV(TAG, "Read %d bytes from HTTP client, writing to UART", read_len);
     if (read_len > 0) {
@@ -204,7 +299,7 @@ int Nextion::upload_range(int range_start) {
       this->content_length_ -= read_len;
       ESP_LOGD(TAG, "Uploaded %0.2f %%, remaining %d bytes, free heap: %" PRIu32 " bytes",
                100.0 * (this->tft_size_ - this->content_length_) / this->tft_size_, this->content_length_,
-               GetFreeHeap_());
+               this->GetFreeHeap_());
       upload_first_chunk_sent_ = true;
       if (recv_string[0] == 0x08 && recv_string.size() == 5) {  // handle partial upload request
         ESP_LOGD(
@@ -225,7 +320,8 @@ int Nextion::upload_range(int range_start) {
           esp_http_client_cleanup(client);
           #endif  // ARDUINO vs USE_ESP_IDF
           ESP_LOGV(TAG, "Client closed");
-          return result;
+          transfer_position = result;
+          return Nextion::TFTUploadResult::OK;
         }
       } else if (recv_string[0] != 0x05) {  // 0x05 == "ok"
         ESP_LOGE(
@@ -239,7 +335,7 @@ int Nextion::upload_range(int range_start) {
         esp_http_client_cleanup(client);
         #endif  // ARDUINO vs USE_ESP_IDF
         ESP_LOGV(TAG, "Client closed");
-        return -1;
+        return Nextion::TFTUploadResult::NextionError_InvalidResponse;
       }
 
       recv_string.clear();
@@ -260,21 +356,27 @@ int Nextion::upload_range(int range_start) {
   esp_http_client_cleanup(client);
   #endif  // ARDUINO vs USE_ESP_IDF
   ESP_LOGV(TAG, "Client closed");
-  return range_end + 1;
+  transfer_position = range_end + 1;
+  return Nextion::TFTUploadResult::OK;
 }
 
-bool Nextion::upload_tft() {
+Nextion::TFTUploadResult Nextion::upload_tft() {
   ESP_LOGD(TAG, "Nextion TFT upload requested");
-  ESP_LOGD(TAG, "url: %s", this->tft_url_.c_str());
+
+  if (!this->isValidUrl(tft_url_.c_str())) {
+    ESP_LOGE(TAG, "Invalid URL: %s", this->tft_url_.c_str());
+    return Nextion::TFTUploadResult::HttpError_InvalidUrl;
+  }
+  ESP_LOGD(TAG, "URL: %s", this->tft_url_.c_str());
 
   if (this->is_updating_) {
-    ESP_LOGW(TAG, "Currently updating");
-    return false;
+    ESP_LOGW(TAG, "Currently uploading");
+    return Nextion::TFTUploadResult::UploadInProgress;
   }
 
   if (!network::is_connected()) {
     ESP_LOGE(TAG, "Network is not connected");
-    return false;
+    return Nextion::TFTUploadResult::NetworkError_NotConnected;
   }
 
   this->is_updating_ = true;
@@ -283,7 +385,7 @@ bool Nextion::upload_tft() {
 
   // Define the configuration for the HTTP client
   ESP_LOGV(TAG, "Initializing HTTP client");
-  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
   #ifdef ARDUINO
   HTTPClient http;
   http.setTimeout(15000);  // Yes 15 seconds.... Helps 8266s along
@@ -305,7 +407,7 @@ bool Nextion::upload_tft() {
   if (!begin_status) {
     this->is_updating_ = false;
     ESP_LOGD(TAG, "Connection failed");
-    return false;
+    return Nextion::TFTUploadResult::HttpError_ConnectionFailed;
   } else {
     ESP_LOGD(TAG, "Connected");
   }
@@ -331,9 +433,10 @@ bool Nextion::upload_tft() {
     ++tries;
   }
 
-  if ((code != 200 && code != 206) || tries > 5) {
-    return this->upload_end(false);
-  }
+  if (code >= 500) return this->upload_end(Nextion::TFTUploadResult::HttpError_ResponseServer);
+  else if (code >= 400) return this->upload_end(Nextion::TFTUploadResult::HttpError_ResponseClient);
+  else if (code >= 300) return this->upload_end(Nextion::TFTUploadResult::HttpError_ResponseRedirection);
+  else if ((code != 200 && code != 206) || tries > 5) return this->upload_end(Nextion::TFTUploadResult::HttpError_ResponseOther);
 
   String content_range_string = http.header("Content-Range");
   content_range_string.remove(0, 12);
@@ -353,48 +456,48 @@ bool Nextion::upload_tft() {
   esp_http_client_handle_t http = esp_http_client_init(&config);
   if (!http) {
     ESP_LOGE(TAG, "Failed to initialize HTTP client.");
-    return this->upload_end(false);
+    return this->upload_end(Nextion::TFTUploadResult::HttpError_ClientInitialization);
   }
 
   // Perform the HTTP request
   ESP_LOGV(TAG, "Check if the client could connect");
-  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
   esp_err_t err = esp_http_client_perform(http);
   if (err != ESP_OK) {
     ESP_LOGE(TAG, "HTTP request failed: %s", esp_err_to_name(err));
     esp_http_client_cleanup(http);
-    return this->upload_end(false);
+    return this->upload_end(Nextion::TFTUploadResult::HttpError_RequestFailed);
   }
 
   // Check the HTTP Status Code
   ESP_LOGV(TAG, "Check the HTTP Status Code");
-  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
   int status_code = esp_http_client_get_status_code(http);
   ESP_LOGV(TAG, "HTTP Status Code: %d", status_code);
   this->tft_size_ = esp_http_client_get_content_length(http);
   
   ESP_LOGD(TAG, "Close HTTP connection");
-  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
   esp_http_client_close(http);
   esp_http_client_cleanup(http);
   ESP_LOGV(TAG, "Connection closed");
-  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
   #endif  // ARDUINO vs USE_ESP_IDF
 
   ESP_LOGD(TAG, "TFT file size: %zu bytes", this->tft_size_);
   if (this->tft_size_ < 4096) {
     ESP_LOGE(TAG, "File size check failed.");
-    return this->upload_end(false);
+    return this->upload_end(Nextion::TFTUploadResult::HttpError_InvalidFileSize);
   } else {
     ESP_LOGV(TAG, "File size check passed. Proceeding...");
   }
   this->content_length_ = this->tft_size_;
 
-  ESP_LOGD(TAG, "Updating Nextion");
+  ESP_LOGD(TAG, "Uploading Nextion");
 
-  // The Nextion will ignore the update command if it is sleeping
+  // The Nextion will ignore the upload command if it is sleeping
   ESP_LOGV(TAG, "Wake-up Nextion");
-  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
   this->send_command_("sleep=0");
   this->set_backlight_brightness(1.0);
   vTaskDelay(pdMS_TO_TICKS(250));  // NOLINT
@@ -408,14 +511,14 @@ bool Nextion::upload_tft() {
 
   // Clear serial receive buffer
   ESP_LOGV(TAG, "Clear serial receive buffer");
-  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
   uint8_t d;
   while (this->available()) {
     this->read_byte(&d);
   };
 
-  ESP_LOGV(TAG, "Send update instruction: %s", command);
-  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Send upload instruction: %s", command);
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
   this->send_command_(command);
 
   std::string response;
@@ -426,52 +529,53 @@ bool Nextion::upload_tft() {
   ESP_LOGD(TAG, "Upgrade response is [%s] - %zu bytes",
            format_hex_pretty(reinterpret_cast<const uint8_t *>(response.data()), response.size()).c_str(),
            response.length());
-  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
 
   if (response.find(0x05) != std::string::npos) {
-    ESP_LOGV(TAG, "Preparation for tft update done");
+    ESP_LOGV(TAG, "Preparation for TFT upload done");
   } else {
-    ESP_LOGE(TAG, "Preparation for tft update failed %d \"%s\"", response[0], response.c_str());
-    return this->upload_end(false);
+    ESP_LOGE(TAG, "Preparation for TFT upload failed %d \"%s\"", response[0], response.c_str());
+    return this->upload_end(Nextion::TFTUploadResult::NextionError_PreparationFailed);
   }
 
   delay(500);
-  ESP_LOGD(TAG, "Updating TFT to Nextion:");
+  ESP_LOGD(TAG, "Uploading TFT to Nextion:");
   ESP_LOGD(TAG, "  URL: %s", this->tft_url_.c_str());
   ESP_LOGD(TAG, "  File size: %d bytes", this->content_length_);
-  ESP_LOGD(TAG, "  Free heap: %" PRIu32, GetFreeHeap_());
+  ESP_LOGD(TAG, "  Free heap: %" PRIu32, this->GetFreeHeap_());
 
   delay(500);
 
   ESP_LOGV(TAG, "Starting transfer by chunks loop");
-  int result = 0;
+  
+  int position = 0;
   while (this->content_length_ > 0) {
     delay(500);
-    result = upload_range(result);
-    if (result < 0) {
-      ESP_LOGE(TAG, "Error updating Nextion!");
-      return this->upload_end(false);
+    Nextion::TFTUploadResult upload_result = upload_from_position(position);
+    if (upload_result != Nextion::TFTUploadResult::OK) {
+      ESP_LOGE(TAG, "Error uploading TFT to Nextion!");
+      return this->upload_end(upload_result);
     }
     App.feed_wdt();
-    ESP_LOGV(TAG, "Free heap: %" PRIu32 ", Bytes left: %d", GetFreeHeap_(), this->content_length_);
+    ESP_LOGV(TAG, "Free heap: %" PRIu32 ", Bytes left: %d", this->GetFreeHeap_(), this->content_length_);
   }
 
-  ESP_LOGD(TAG, "Successfully updated Nextion!");
+  ESP_LOGD(TAG, "Successfully uploaded TFT to Nextion!");
 
-  return upload_end(true);
+  return upload_end(Nextion::TFTUploadResult::OK);
 }
 
-bool Nextion::upload_end(bool successful) {
-  ESP_LOGV(TAG, "Free heap: %" PRIu32, GetFreeHeap_());
+Nextion::TFTUploadResult Nextion::upload_end(Nextion::TFTUploadResult upload_results) {
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
   this->is_updating_ = false;
   ESP_LOGD(TAG, "Restarting Nextion");
   this->soft_reset();
   vTaskDelay(pdMS_TO_TICKS(1500));  // NOLINT
-  if (successful) {
+  if (upload_results == Nextion::TFTUploadResult::OK) {
     ESP_LOGD(TAG, "Restarting ESPHome");
     esp_restart();  // NOLINT(readability-static-accessed-through-instance)
   }
-  return successful;
+  return upload_results;
 }
 
 }  // namespace nextion

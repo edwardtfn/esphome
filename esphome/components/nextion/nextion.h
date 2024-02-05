@@ -37,7 +37,7 @@ static const std::string COMMAND_DELIMITER{static_cast<char>(255), static_cast<c
 
 class Nextion : public NextionBase, public PollingComponent, public uart::UARTDevice {
  public:
-  /**
+   /**
    * Set the text of a component to a static string.
    * @param component The component name.
    * @param text The static text to set.
@@ -913,17 +913,146 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
 
 #ifdef USE_NEXTION_TFT_UPLOAD
   /**
+   * @enum TFTUploadResult
+   * @brief Enumeration for the results of a TFT upload operation.
+   *
+   * This enum is used to represent the various outcomes (both success and failure)
+   * of an attempt to upload a TFT file to a Nextion display.
+   */
+  enum class TFTUploadResult {
+      /**
+       * @brief The upload operation completed successfully.
+       */
+      OK,
+
+      /**
+       * @brief Another upload is already in progress.
+      */
+      UploadInProgress,
+
+      /**
+       * @brief Network is not connected.
+      */
+      NetworkError_NotConnected,
+
+      // HTTP/HTTPS Errors
+      /**
+       * @brief The provided URL is invalid.
+       */
+      HttpError_InvalidUrl,
+
+      /**
+       * @brief Connection to HTTP server failed
+      */
+      HttpError_ConnectionFailed,
+
+      /**
+       * @brief HTTP response status on Server error range.
+       * 
+      */
+      HttpError_ResponseServer,
+
+      /**
+       * @brief HTTP response status on Clent error range.
+       * 
+      */
+      HttpError_ResponseClient,
+
+      /**
+       * @brief HTTP response status on Redirection error range.
+       * 
+      */
+      HttpError_ResponseRedirection,
+
+      /**
+       * @brief HTTP response status on Server error range.
+       * 
+      */
+      HttpError_ResponseOther,
+
+      /**
+       * @brief HTTP server provided an invalid header.
+       */
+      HttpError_InvalidServerHeader,
+
+      /**
+       * @brief Failed to initialize HTTP client.
+      */
+      HttpError_ClientInitialization,
+
+      /**
+       * @brief HTTP request failed.
+      */
+      HttpError_RequestFailed,
+
+      /**
+       * @brief The downloaded file size did not match the expected size.
+       */
+      HttpError_InvalidFileSize,
+
+      /**
+       * @brief Failed to fetch full package from HTTP server.
+      */
+       HttpError_FailedToFetchFullPackage,
+
+      /**
+       * @brief Failed to open connection to HTTP server.
+      */
+      HttpError_FailedToOpenConnection,
+
+      /**
+       * @brief Failed to get content lenght from HTTP server.
+      */
+      HttpError_FailedToGetContentLenght,
+
+      // Nextion Errors
+      /**
+       * @brief Preparation for TFT upload failed.
+      */
+      NextionError_PreparationFailed,
+
+      /**
+       * @brief Invalid response from Nextion.
+      */
+      NextionError_InvalidResponse,
+
+      // Process Errors
+      /**
+       * @brief Invalid range requested.
+      */
+      ProcessError_InvalidRange,
+
+      // Memory Errors
+      /**
+       * @brief
+      */
+      MemoryError_FailedToAllocate,
+  };
+
+  /**
+   * @brief Converts TFTUploadResult enum values to their corresponding string representations.
+   *
+   * This function is used to obtain human-readable strings for logging or displaying
+   * the outcomes of TFT upload operations to a Nextion display. It maps each enum value
+   * defined in TFTUploadResult to a descriptive text message.
+   *
+   * @param result The TFTUploadResult enum value to be converted to a string.
+   * @return A const char* pointing to the string representation of the given result.
+   */
+  const char* TFTUploadResultToString(TFTUploadResult result);
+
+  /**
    * Set the tft file URL. https seems problematic with arduino..
    */
   void set_tft_url(const std::string &tft_url) { this->tft_url_ = tft_url; }
-
-#endif
 
   /**
    * Upload the tft file and soft reset Nextion
    * @return bool True: Transfer completed successfuly, False: Transfer failed.
    */
-  bool upload_tft();
+  Nextion::TFTUploadResult upload_tft();
+
+#endif
 
   void dump_config() override;
 
@@ -1075,12 +1204,11 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
   int content_length_ = 0;
   int tft_size_ = 0;
   /**
-   * will request 4096 bytes chunks from the web server
-   * and send each to Nextion
-   * @param int range_start Position of next byte to transfer.
-   * @return position of last byte transferred, -1 for failure.
+   * Will request data from the http server and send in 4096 bytes chuncks to Nextion
+   * @param int range_start Position of next byte to transfer (which will be updated when successful).
+   * @return Nextion::TFTUploadResult result of the transfer.
    */
-  int upload_range(int range_start);
+  Nextion::TFTUploadResult upload_from_position(int &transfer_position);
   /**
    * Ends the upload process, restart Nextion and, if successful,
    * restarts ESP
@@ -1088,6 +1216,20 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
    * @return bool True: Transfer completed successfuly, False: Transfer failed.
    */
   bool upload_end(bool successful);
+
+  /**
+   * Returns the ESP Free Heap memory. This is framework independent.
+   * @return Free Heap in bytes.
+  */
+  uint32_t GetFreeHeap_();
+
+  /**
+   * Basic check if a given URL is valid.
+   * @param string originalUrl: The URL to be checked.
+   * @return bool True: URL looks valid, False: Invalid URL.
+  */
+  bool isValidUrl(const std::string& originalUrl);
+
 #endif  // USE_NEXTION_TFT_UPLOAD
 
   bool get_is_connected_() { return this->is_connected_; }
