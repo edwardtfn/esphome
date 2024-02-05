@@ -29,68 +29,68 @@ static const char *const TAG = "nextion.upload.idf";
 
 const char* TFTUploadResultToString(Nextion::TFTUploadResult result) {
     switch (result) {
-        case TFTUploadResult::OK:
+        case Nextion::TFTUploadResult::OK:
             return "Upload successful";
 
-        case TFTUploadResult::UploadInProgress:
+        case Nextion::TFTUploadResult::UploadInProgress:
             return "Another upload is already in progress";
 
-        case TFTUploadResult::NetworkError_NotConnected:
+        case Nextion::TFTUploadResult::NetworkError_NotConnected:
             return "Network is not connected";
 
         // HTTP/HTTPS Errors
-        case TFTUploadResult::HttpError_InvalidUrl:
+        case Nextion::TFTUploadResult::HttpError_InvalidUrl:
             return "The provided URL is invalid";
 
-        case TFTUploadResult::HttpError_ConnectionFailed:
+        case Nextion::TFTUploadResult::HttpError_ConnectionFailed:
             return "Connection to HTTP server failed";
 
-        case TFTUploadResult::HttpError_ResponseServer:
+        case Nextion::TFTUploadResult::HttpError_ResponseServer:
             return "HTTP server error response";
 
-        case TFTUploadResult::HttpError_ResponseClient:
+        case Nextion::TFTUploadResult::HttpError_ResponseClient:
             return "HTTP client error response";
 
-        case TFTUploadResult::HttpError_ResponseRedirection:
+        case Nextion::TFTUploadResult::HttpError_ResponseRedirection:
             return "HTTP redirection error response";
 
-        case TFTUploadResult::HttpError_ResponseOther:
+        case Nextion::TFTUploadResult::HttpError_ResponseOther:
             return "HTTP other error response";
 
-        case TFTUploadResult::HttpError_InvalidServerHeader:
+        case Nextion::TFTUploadResult::HttpError_InvalidServerHeader:
             return "HTTP server provided an invalid header";
 
-        case TFTUploadResult::HttpError_ClientInitialization:
+        case Nextion::TFTUploadResult::HttpError_ClientInitialization:
             return "Failed to initialize HTTP client";
 
-        case TFTUploadResult::HttpError_RequestFailed:
+        case Nextion::TFTUploadResult::HttpError_RequestFailed:
             return "HTTP request failed";
 
-        case TFTUploadResult::HttpError_InvalidFileSize:
+        case Nextion::TFTUploadResult::HttpError_InvalidFileSize:
             return "The downloaded file size did not match the expected size";
 
-        case TFTUploadResult::HttpError_FailedToFetchFullPackage:
+        case Nextion::TFTUploadResult::HttpError_FailedToFetchFullPackage:
             return "Failed to fetch full package from HTTP server";
 
-        case TFTUploadResult::HttpError_FailedToOpenConnection:
+        case Nextion::TFTUploadResult::HttpError_FailedToOpenConnection:
             return "Failed to open connection to HTTP server";
 
-        case TFTUploadResult::HttpError_FailedToGetContentLenght:
+        case Nextion::TFTUploadResult::HttpError_FailedToGetContentLenght:
             return "Failed to get content length from HTTP server";
 
         // Nextion Errors
-        case TFTUploadResult::NextionError_PreparationFailed:
+        case Nextion::TFTUploadResult::NextionError_PreparationFailed:
             return "Preparation for TFT upload failed";
 
-        case TFTUploadResult::NextionError_InvalidResponse:
+        case Nextion::TFTUploadResult::NextionError_InvalidResponse:
             return "Invalid response from Nextion";
 
         // Process Errors
-        case TFTUploadResult::ProcessError_InvalidRange:
+        case Nextion::TFTUploadResult::ProcessError_InvalidRange:
             return "Invalid range requested";
 
         // Memory Errors
-        case TFTUploadResult::MemoryError_FailedToAllocate:
+        case Nextion::TFTUploadResult::MemoryError_FailedToAllocate:
             return "Failed to allocate memory";
 
         default:
