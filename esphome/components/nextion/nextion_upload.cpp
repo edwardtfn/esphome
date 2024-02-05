@@ -118,12 +118,21 @@ bool Nextion::isValidUrl(const std::string& originalUrl) {
             domainEnd = url.length();
         }
 
+        bool inIPv6 = false; // Track if we're within square brackets
         for (size_t i = domainStart; i < domainEnd; ++i) {
             char c = url[i];
-            if (!std::isalnum(c) && c != '-' && c != '.') {
+            if (c == '[') {
+                inIPv6 = true;
+            } else if (c == ']') {
+                inIPv6 = false;
+            } else if (!std::isalnum(c) && c != '-' && c != '.' && (!inIPv6 || (inIPv6 && c != ':'))) {
                 ESP_LOGE(TAG, "Invalid URL: Invalid character in domain: %c", c);
                 return false; // Invalid character in domain
             }
+        }
+        if (inIPv6) { // Misplaced or unmatched square bracket
+            ESP_LOGE(TAG, "Invalid URL: Unmatched square brackets in IPv6 address");
+            return false;
         }
         // Passed all checks
         return true;
