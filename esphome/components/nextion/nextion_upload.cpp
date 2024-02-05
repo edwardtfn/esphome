@@ -130,7 +130,7 @@ bool isValidUrl(const std::string& originalUrl) {
     return false; // Invalid or missing scheme
 }
 
-Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
+TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
   ESP_LOGV(TAG, "url: %s", this->tft_url_.c_str());
   uint range_size = this->tft_size_ - transfer_position;
   ESP_LOGV(TAG, "tft_size_: %i", this->tft_size_);
@@ -565,7 +565,7 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
   return upload_end(Nextion::TFTUploadResult::OK);
 }
 
-Nextion::TFTUploadResult Nextion::upload_end(Nextion::TFTUploadResult upload_results) {
+TFTUploadResult Nextion::upload_end(TFTUploadResult upload_results) {
   ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
   this->is_updating_ = false;
   ESP_LOGD(TAG, "Restarting Nextion");
