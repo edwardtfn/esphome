@@ -27,7 +27,7 @@ static const char *const TAG = "nextion.upload.idf";
 // Followed guide
 // https://unofficialnextion.com/t/nextion-upload-protocol-v1-2-the-fast-one/1044/2
 
-static const char* Nextion::TFTUploadResultToString(Nextion::TFTUploadResult result) {
+const char* Nextion::TFTUploadResultToString(Nextion::TFTUploadResult result) {
     switch (result) {
         case Nextion::TFTUploadResult::OK:
             return "Upload successful";
@@ -574,6 +574,8 @@ Nextion::TFTUploadResult Nextion::upload_end(Nextion::TFTUploadResult upload_res
   if (upload_results == Nextion::TFTUploadResult::OK) {
     ESP_LOGD(TAG, "Restarting ESPHome");
     esp_restart();  // NOLINT(readability-static-accessed-through-instance)
+  } else {
+    ESP_LOGE(TAG, "Nextion TFT upload failed: %s", this->TFTUploadResultToString(upload_results));
   }
   return upload_results;
 }
