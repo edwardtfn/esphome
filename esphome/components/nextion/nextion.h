@@ -935,12 +935,6 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
       */
       NetworkError_NotConnected,
 
-      // HTTP/HTTPS Errors
-      /**
-       * @brief The provided URL is invalid.
-       */
-      HttpError_InvalidUrl,
-
       /**
        * @brief Connection to HTTP server failed
       */
@@ -1222,13 +1216,6 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
    * @return Free Heap in bytes.
   */
   uint32_t GetFreeHeap_();
-
-  /**
-   * Basic check if a given URL is valid.
-   * @param string originalUrl: The URL to be checked.
-   * @return bool True: URL looks valid, False: Invalid URL.
-  */
-  bool isValidUrl(const std::string& originalUrl);
 
 #endif  // USE_NEXTION_TFT_UPLOAD
 

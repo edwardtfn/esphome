@@ -38,10 +38,6 @@ const char* Nextion::TFTUploadResultToString(Nextion::TFTUploadResult result) {
         case Nextion::TFTUploadResult::NetworkError_NotConnected:
             return "Network is not connected";
 
-        // HTTP/HTTPS Errors
-        case Nextion::TFTUploadResult::HttpError_InvalidUrl:
-            return "The provided URL is invalid";
-
         case Nextion::TFTUploadResult::HttpError_ConnectionFailed:
             return "Connection to HTTP server failed";
 
@@ -104,61 +100,6 @@ uint32_t Nextion::GetFreeHeap_() {
   #elif defined(USE_ESP_IDF)
   return esp_get_free_heap_size();
   #endif  // ARDUINO vs USE_ESP_IDF
-}
-
-bool Nextion::isValidUrl(const std::string& originalUrl) {
-    // Simplified regex that supports HTTP(S) URLs with IPv4, IPv6, and domain names.
-    // This version checks for:
-    // - Scheme: http or https
-    // - IPv6 addresses in square brackets
-    // - Optional port numbers
-    // - Basic path/query/fragment validation
-    // Note: This regex simplifies IPv6 validation and may not cover all edge cases.
-    std::regex urlRegex(
-        R"(^(https?:\/\/)(\[(([0-9A-Fa-f]{0,4}:){1,7}[0-9A-Fa-f]{0,4})\]|([a-zA-Z0-9\-\.]+))(:[0-9]{1,5})?(\/[^\s]*)?$)",
-        std::regex::icase);
-    return std::regex_match(originalUrl, urlRegex);
-
-    std::string url = originalUrl;
-    std::transform(url.begin(), url.end(), url.begin(),
-                   [](unsigned char c){ return std::tolower(c); });
-
-    if (url.rfind("http://", 0) == 0 || url.rfind("https://", 0) == 0) {
-        size_t domainStart = url.find("://") + 3;
-        size_t domainEnd = url.find('/', domainStart);
-        if (domainEnd == std::string::npos) {
-            domainEnd = url.length();
-        }
-
-        bool inIPv6 = false; // Track if we're within square brackets for IPv6
-        for (size_t i = domainStart; i < domainEnd; ++i) {
-            char c = url[i];
-            if (c == '[') {
-                inIPv6 = true;
-            } else if (c == ']') {
-                inIPv6 = false;
-            } else if (!std::isalnum(c) && c != '-' && c != '.' && (!inIPv6 || (inIPv6 && c != ':'))) {
-                // Before declaring the URL invalid, check if the character is a colon possibly indicating a port number
-                if (c == ':' && !inIPv6) {
-                    // Ensure the rest of the string is a valid port number
-                    size_t portStart = i + 1;
-                    size_t portEnd = url.find('/', portStart);
-                    if (portEnd == std::string::npos) portEnd = url.length();
-                    std::string port = url.substr(portStart, portEnd - portStart);
-                    if (std::all_of(port.begin(), port.end(), ::isdigit)) {
-                        // Valid port number, continue checking the rest of the URL
-                        continue;
-                    }
-                }
-                ESP_LOGE(TAG, "Invalid URL: Invalid character in domain: %c", c);
-                return false; // Invalid character in domain
-            }
-        }
-        // Passed all checks
-        return true;
-    }
-    ESP_LOGE(TAG, "Invalid URL: Invalid or missing scheme");
-    return false; // Invalid or missing scheme
 }
 
 Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
@@ -393,11 +334,6 @@ Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
 
 Nextion::TFTUploadResult Nextion::upload_tft() {
   ESP_LOGD(TAG, "Nextion TFT upload requested");
-
-  if (!this->isValidUrl(tft_url_.c_str())) {
-    ESP_LOGE(TAG, "Invalid URL: %s", this->tft_url_.c_str());
-    return Nextion::TFTUploadResult::HttpError_InvalidUrl;
-  }
   ESP_LOGD(TAG, "URL: %s", this->tft_url_.c_str());
 
   if (this->is_updating_) {
