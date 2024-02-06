@@ -206,39 +206,39 @@ Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
     return Nextion::TFTUploadResult::HttpError_FailedToGetContentLenght;
   }
 
+  ESP_LOGV(TAG, "Allocate buffer");
+  std::vector<uint8_t> buffer(4096); // Attempt to allocate up to 4096 bytes
+  ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
+  // Check if the allocation was successful by comparing the size
+  if (buffer.size() != 4096) {
+    ESP_LOGE(TAG, "Failed to allocate memory for buffer");
+    // Clean-up code as necessary, for example:
+    #ifdef ARDUINO
+    client.end();
+    #elif defined(USE_ESP_IDF)
+    esp_http_client_close(client);
+    esp_http_client_cleanup(client);
+    #endif
+    return Nextion::TFTUploadResult::MemoryError_FailedToAllocate;
+  } else {
+    ESP_LOGV(TAG, "Memory for buffer allocated successfully");
+  }
+
   int total_read_len = 0, read_len;
   std::string recv_string;
-
   while (true) {
     App.feed_wdt();
     int bufferSize = std::min(this->content_length_, 4096);  // Limits buffer to the remaining data
-    ESP_LOGV(TAG, "Allocate buffer");
-    std::vector<uint8_t> buffer(bufferSize); // Attempt to allocate up to 4096 bytes
-    ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
-
-    // Check if the allocation was successful by comparing the size
-    if (buffer.size() != bufferSize) {
-      ESP_LOGE(TAG, "Failed to allocate memory for buffer");
-      // Clean-up code as necessary, for example:
-      #ifdef ARDUINO
-      client.end();
-      #elif defined(USE_ESP_IDF)
-      esp_http_client_close(client);
-      esp_http_client_cleanup(client);
-      #endif
-      return Nextion::TFTUploadResult::MemoryError_FailedToAllocate;
-    } else {
-      ESP_LOGV(TAG, "Memory for buffer allocated successfully");
-    }
     ESP_LOGV(TAG, "Fetching %d bytes from HTTP client", bufferSize);
     #ifdef ARDUINO
     unsigned long startTime = millis();
     const unsigned long timeout = 5000;
     int read_len = 0;
     int partial_read_len = 0;
-    while (read_len < buffer.size() && millis() - startTime < timeout) {
+    buffer.clear();
+    while (read_len < bufferSize && millis() - startTime < timeout) {
       if (client.getStreamPtr()->available() > 0) {
-        partial_read_len = client.getStreamPtr()->readBytes(reinterpret_cast<char *>(buffer.data()) + read_len, buffer.size() - read_len);
+        partial_read_len = client.getStreamPtr()->readBytes(reinterpret_cast<char *>(buffer.data()) + read_len, bufferSize - read_len);
         read_len += partial_read_len;
         if (partial_read_len > 0) {
           App.feed_wdt();
@@ -247,11 +247,11 @@ Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
       }
     }
     #elif defined(USE_ESP_IDF)
-    int read_len = esp_http_client_read(client, reinterpret_cast<char *>(buffer.data()), buffer.size());
+    int read_len = esp_http_client_read(client, reinterpret_cast<char *>(buffer.data()), bufferSize);
     #endif
-    if (read_len != buffer.size()) {
+    if (read_len != bufferSize) {
       // Did not receive the full package within the timeout period
-      ESP_LOGE(TAG, "Failed to read full package, received only %d of %d bytes", read_len, buffer.size());
+      ESP_LOGE(TAG, "Failed to read full package, received only %d of %d bytes", read_len, bufferSize);
       ESP_LOGV(TAG, "Close http client");
       #ifdef ARDUINO
       client.end();
