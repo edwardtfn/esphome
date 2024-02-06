@@ -119,8 +119,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
   #ifdef ARDUINO
   HTTPClient client;
   client.setTimeout(15000);  // Yes 15 seconds.... Helps 8266s along
-  WiFiClientSecure wifi_client;
-  wifi_client.setInsecure();
+  #ifdef USE_ESP8266
   #if USE_ARDUINO_VERSION_CODE >= VERSION_CODE(2, 7, 0)
   client.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   #elif USE_ARDUINO_VERSION_CODE >= VERSION_CODE(2, 6, 0)
@@ -129,6 +128,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
   #if USE_ARDUINO_VERSION_CODE >= VERSION_CODE(2, 6, 0)
   client.setRedirectLimit(3);
   #endif
+  #endif  // USE_ESP8266
   #elif defined(USE_ESP_IDF)
   esp_http_client_config_t config = {
       .url = this->tft_url_.c_str(),
@@ -148,7 +148,12 @@ Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
   bool begin_status = false;
   while (tries <= 5) {
     ++tries;
-    begin_status = client.begin(wifi_client, this->tft_url_.c_str());
+  #ifdef USE_ESP32
+    begin_status = client.begin(this->tft_url_.c_str());
+  #endif
+  #ifdef USE_ESP8266
+    begin_status = client.begin(*this->get_wifi_client_(), this->tft_url_.c_str());
+  #endif
     if (!begin_status) {
       ESP_LOGD(TAG, "upload_by_chunks_: connection failed");
       delay(500);  // NOLINT
@@ -262,7 +267,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
       recv_string.clear();
       this->write_array(buffer);
       App.feed_wdt();
-      this->recv_ret_string_(recv_string, upload_first_chunk_sent_ ? 500 : 2000, true);
+      this->recv_ret_string_(recv_string, upload_first_chunk_sent_ ? 500 : 5000, true);
       this->content_length_ -= read_len;
       ESP_LOGD(TAG, "Uploaded %0.2f %%, remaining %d bytes, free heap: %" PRIu32 " bytes",
                100.0 * (this->tft_size_ - this->content_length_) / this->tft_size_, this->content_length_,
@@ -351,18 +356,21 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
   #ifdef ARDUINO
   HTTPClient http;
   http.setTimeout(15000);  // Yes 15 seconds.... Helps 8266s along
-  WiFiClientSecure wifi_client;
-  wifi_client.setInsecure();
+  bool begin_status = false;
+  #ifdef USE_ESP32
+  begin_status = http.begin(this->tft_url_.c_str());
+  #endif
+  #ifdef USE_ESP8266
   #if USE_ARDUINO_VERSION_CODE >= VERSION_CODE(2, 7, 0)
-  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  client.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   #elif USE_ARDUINO_VERSION_CODE >= VERSION_CODE(2, 6, 0)
-  http.setFollowRedirects(true);
+  client.setFollowRedirects(true);
   #endif
   #if USE_ARDUINO_VERSION_CODE >= VERSION_CODE(2, 6, 0)
-  http.setRedirectLimit(3);
+  client.setRedirectLimit(3);
   #endif
-  bool begin_status = false;
-  begin_status = http.begin(wifi_client, this->tft_url_.c_str());
+  begin_status = http.begin(*this->get_wifi_client_(), this->tft_url_.c_str());
+  #endif  // USE_ESP8266
   if (!begin_status) {
     this->is_updating_ = false;
     ESP_LOGD(TAG, "Connection failed");
