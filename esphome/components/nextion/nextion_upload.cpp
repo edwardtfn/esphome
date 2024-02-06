@@ -440,7 +440,7 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
   ESP_LOGV(TAG, "Check the HTTP Status Code");
   ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
   int status_code = esp_http_client_get_status_code(http);
-  ESP_LOGV(TAG, "HTTP Status Code: %d", status_code);
+  ESP_LOGD(TAG, "HTTP Status Code: %d", status_code);
   this->tft_size_ = esp_http_client_get_content_length(http);
   
   ESP_LOGD(TAG, "Close HTTP connection");
