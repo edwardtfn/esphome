@@ -229,7 +229,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
   while (true) {
     App.feed_wdt();
     int bufferSize = std::min(this->content_length_, 4096);  // Limits buffer to the remaining data
-    ESP_LOGV(TAG, "Fetching %d bytes from HTTP client", bufferSize);
+    ESP_LOGV(TAG, "Fetching %d bytes from HTTP", bufferSize);
     #ifdef ARDUINO
     unsigned long startTime = millis();
     const unsigned long timeout = 5000;
@@ -262,7 +262,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
       ESP_LOGV(TAG, "Client closed");
       return Nextion::TFTUploadResult::HttpError_FailedToFetchFullPackage;
     }
-    ESP_LOGV(TAG, "Read %d bytes from HTTP client, writing to UART", read_len);
+    ESP_LOGV(TAG, "%d bytes fetched, writing it to UART", read_len);
     if (read_len > 0) {
       recv_string.clear();
       this->write_array(buffer);
