@@ -13,13 +13,12 @@
 
 #ifdef USE_NEXTION_TFT_UPLOAD
 #ifdef ARDUINO
+#include <WiFiClientSecure.h>
 #ifdef USE_ESP32
 #include <HTTPClient.h>
-#endif  // USE_ESP32
-#ifdef USE_ESP8266
+#elif defined(USE_ESP8266)
 #include <ESP8266HTTPClient.h>
-#include <WiFiClientSecure.h>
-#endif  // USE_ESP8266
+#endif  // USE_ESP32 vs USE_ESP8266
 #elif defined(USE_ESP_IDF)
 #include <esp_http_client.h>
 #endif  // ARDUINO vs ESP-IDF
