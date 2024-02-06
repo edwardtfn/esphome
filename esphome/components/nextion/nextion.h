@@ -921,6 +921,11 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
    */
   enum class TFTUploadResult {
       /**
+       * @brief The upload state is unkown.
+       */
+      Unknown,
+
+      /**
        * @brief The upload operation completed successfully.
        */
       OK,

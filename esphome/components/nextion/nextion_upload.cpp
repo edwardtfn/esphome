@@ -500,7 +500,7 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
   this->recv_ret_string_(response, 2000, true);  // This can take some time to return
 
   // The Nextion display will, if it's ready to accept data, send a 0x05 byte.
-  ESP_LOGD(TAG, "Upgrade response is [%s] - %zu bytes",
+  ESP_LOGD(TAG, "Upgrade response is [%s] - %zu byte(s)",
            format_hex_pretty(reinterpret_cast<const uint8_t *>(response.data()), response.size()).c_str(),
            response.length());
   ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
