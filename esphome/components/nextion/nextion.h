@@ -1009,6 +1009,11 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
       */
       HttpError_FailedToGetContentLenght,
 
+      /**
+       * @brief Failed to set HTTP method.
+      */
+      HttpError_SetMethodFailed,
+
       // Nextion Errors
       /**
        * @brief Preparation for TFT upload failed.

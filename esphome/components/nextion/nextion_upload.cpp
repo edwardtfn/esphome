@@ -77,6 +77,9 @@ const char* Nextion::TFTUploadResultToString(Nextion::TFTUploadResult result) {
         case Nextion::TFTUploadResult::HttpError_FailedToGetContentLenght:
             return "Failed to get content length from HTTP server";
 
+        case Nextion::TFTUploadResult::HttpError_SetMethodFailed:
+            return "Failed to set HTTP method";
+
         // Nextion Errors
         case Nextion::TFTUploadResult::NextionError_PreparationFailed:
             return "Preparation for TFT upload failed";
@@ -112,7 +115,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(esp_http_client_handle_t 
 #endif  // ARDUINO vs USE_ESP_IDF
   uint range_size = this->tft_size_ - transfer_position;
   ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
-  int range_end = (transfer_position == 0) ? std::min(this->tft_size_, 16383) : this->tft_size_;
+  int range_end = (transfer_position == 0) ? std::min(this->tft_size_, 4096) : this->tft_size_;
   if (range_size <= 0 or range_end <= transfer_position) {
     ESP_LOGE(TAG, "Invalid range");
     ESP_LOGD(TAG, "Range start: %i", transfer_position);
@@ -436,13 +439,21 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
     return this->upload_end(Nextion::TFTUploadResult::NextionError_PreparationFailed);
   }
 
-  delay(500);
   ESP_LOGD(TAG, "Uploading TFT to Nextion:");
   ESP_LOGD(TAG, "  URL: %s", this->tft_url_.c_str());
   ESP_LOGD(TAG, "  File size: %d bytes", this->content_length_);
   ESP_LOGD(TAG, "  Free heap: %" PRIu32, this->GetFreeHeap_());
 
-  delay(500);
+  #ifdef USE_ESP_IDF
+  ESP_LOGV(TAG, "Change the method to GET before starting the download");
+  esp_err_t set_method_result = esp_http_client_set_method(http_client, HTTP_METHOD_GET);
+  if (set_method_result != ESP_OK) {
+      ESP_LOGE(TAG, "Failed to set HTTP method to GET: %s", esp_err_to_name(set_method_result));
+      return Nextion::TFTUploadResult::HttpError_SetMethodFailed;
+  }
+  #endif  // USE_ESP_IDF
+
+  // Proceed with the content download as before
 
   ESP_LOGV(TAG, "Starting transfer by chunks loop");
   
