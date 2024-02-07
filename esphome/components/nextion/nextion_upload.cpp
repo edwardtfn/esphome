@@ -335,7 +335,7 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
     return this->upload_end(Nextion::TFTUploadResult::HttpError_ClientInitialization);
   }
 
-  esp_err_t err = esp_http_client_set_header(client, "Connection", "keep-alive");
+  esp_err_t err = esp_http_client_set_header(http, "Connection", "keep-alive");
   if (err != ESP_OK) {
     ESP_LOGE(TAG, "HTTP set header failed: %s", esp_err_to_name(err));
     esp_http_client_cleanup(http);
