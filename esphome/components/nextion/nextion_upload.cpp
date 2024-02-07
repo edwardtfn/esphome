@@ -193,7 +193,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(esp_http_client_handle_t 
       }
     }
     #elif defined(USE_ESP_IDF)
-    int read_len = esp_http_client_read(http_client, reinterpret_cast<char *>(buffer.data()), bufferSize);
+    int read_len = esp_http_client_read(http_client, reinterpret_cast<char *>(buffer.data()), 4096);
     #endif
     if (read_len != bufferSize) {
       // Did not receive the full package within the timeout period
