@@ -107,7 +107,7 @@ uint32_t Nextion::GetFreeHeap_() {
 
 #ifdef ARDUINO
 Nextion::TFTUploadResult Nextion::upload_from_position(HTTPClient &client, int &transfer_position) {
-#elif 
+#elif defined(USE_ESP_IDF)
 Nextion::TFTUploadResult Nextion::upload_from_position(esp_http_client_handle_t client, int &transfer_position) {
 #endif  // ARDUINO vs USE_ESP_IDF
   uint range_size = this->tft_size_ - transfer_position;
