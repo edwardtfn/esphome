@@ -128,7 +128,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(esp_http_client_handle_t 
   ESP_LOGV(TAG, "Requesting range: %s", range_header);
   #ifdef ARDUINO
   http_client.addHeader("Range", range_header);
-  code = http_client.GET();
+  int code = http_client.GET();
   if (code != HTTP_CODE_OK and code != HTTP_CODE_PARTIAL_CONTENT) {
     ESP_LOGW(TAG, "HTTP Request failed; Error: %s",
             HTTPClient::errorToString(code).c_str());
