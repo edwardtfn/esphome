@@ -1038,7 +1038,7 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
    * @param result The TFTUploadResult enum value to be converted to a string.
    * @return A const char* pointing to the string representation of the given result.
    */
-  static const char* TFTUploadResultToString(TFTUploadResult result);
+  static const char* tft_upload_result_to_string(TFTUploadResult result);
 
   /**
    * Set the tft file URL. https seems problematic with arduino..
