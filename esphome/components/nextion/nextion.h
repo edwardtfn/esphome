@@ -1214,30 +1214,31 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
   int tft_size_ = 0;
 
   /**
-   * Requests a specific range of data from the HTTP server using a persistent HTTP connection and sends it to the Nextion display in chunks.
-   * Designed to work in both Arduino and ESP-IDF environments, this function utilizes a pre-initialized HTTP client
-   * to maintain a persistent connection for consecutive data range requests.
-   * It calculates the data range to request based on the current position (`range_start`) and a predefined `chunk_size`, 
-   * then updates the position for subsequent calls. Data fetched from the HTTP server is sent to the Nextion display in chunks
-   * up to the specified `chunk_size` bytes each until the entire requested range is transferred or an error occurs.
+   * This function requests a specific range of data from an HTTP server using a persistent connection
+   * and sends it to the Nextion display in predefined chunks.
+   * It is compatible with both Arduino and ESP-IDF environments,
+   * leveraging a pre-initialized HTTP client to maintain the connection for consecutive range requests.
+   * The function determines the range of data to request based on the current position, indicated by `range_start`,
+   * and internally uses a fixed chunk size for data transmission.
+   * The `range_start` parameter is updated after each successful chunk transfer, facilitating sequential data fetching.
+   * The data is sent to the Nextion display in chunks, ensuring efficient and manageable data transfer.
    *
-   * In the Arduino environment, the function expects an HTTPClient object passed by reference, used to manage the connection
-   * and request headers. For ESP-IDF, it expects an esp_http_client_handle_t, representing the initialized HTTP client handle.
+   * For Arduino environments, the function requires an HTTPClient object passed by reference,
+   * which is used to manage the connection and request headers.
+   * In ESP-IDF environments, an esp_http_client_handle_t is required, representing the handle to the initialized HTTP client.
    *
-   * @param http_client The HTTP client instance used for making the range request. This should be an HTTPClient object
-   * for Arduino and an esp_http_client_handle_t for ESP-IDF.
-   * @param range_start A reference to an integer specifying the start position for the current data transfer.
-   * This value is updated to reflect the next start position after a successful chunk transfer, facilitating sequential chunk requests.
-   * @param chunk_size Specifies the maximum size of each data chunk fetched from the HTTP server, in bytes. This size determines
-   * how data is partitioned for transmission to the Nextion display, ensuring efficient use of memory and network resources.
+   * @param http_client The HTTP client instance for making the range request. For Arduino, this should be an HTTPClient object;
+   * for ESP-IDF, an esp_http_client_handle_t.
+   * @param range_start A reference to an integer that specifies the starting position of the current data transfer.
+   * This value is updated to mark the beginning of the next chunk after a successful transfer.
    *
-   * @return A Nextion::TFTUploadResult indicating the result of the transfer. This can be an OK status for successful
-   * transfers or various error codes indicating the nature of any failure encountered during the operation.
+   * @return A Nextion::TFTUploadResult indicating the outcome of the transfer. It can be an OK status for successful transfers,
+   * or various error codes that detail the nature of any failure encountered during the operation.
    */
   #ifdef ARDUINO
-  TFTUploadResult upload_by_chunks_(HTTPClient &http_client, int &range_start, uint32_t chunk_size);
+  TFTUploadResult upload_by_chunks_(HTTPClient &http_client, int &range_start);
   #elif defined(USE_ESP_IDF)
-  TFTUploadResult upload_by_chunks_(esp_http_client_handle_t http_client, int &range_start, uint32_t chunk_size);
+  TFTUploadResult upload_by_chunks_(esp_http_client_handle_t http_client, int &range_start);
   #endif  // ARDUINO vs USE_ESP_IDF
 
   /**

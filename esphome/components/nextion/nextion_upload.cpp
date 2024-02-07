@@ -109,13 +109,13 @@ uint32_t Nextion::GetFreeHeap_() {
 }
 
 #ifdef ARDUINO
-Nextion::TFTUploadResult Nextion::upload_by_chunks_(HTTPClient &http_client, int &range_start, uint32_t chunk_size) {
+Nextion::TFTUploadResult Nextion::upload_by_chunks_(HTTPClient &http_client, int &range_start) {
 #elif defined(USE_ESP_IDF)
-Nextion::TFTUploadResult Nextion::upload_by_chunks_(esp_http_client_handle_t http_client, int &range_start, uint32_t chunk_size) {
+Nextion::TFTUploadResult Nextion::upload_by_chunks_(esp_http_client_handle_t http_client, int &range_start) {
 #endif  // ARDUINO vs USE_ESP_IDF
   uint range_size = this->tft_size_ - range_start;
   ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
-  int range_end = (upload_first_chunk_sent_ ? this->tft_size_ : std::min(this->tft_size_, chunk_size))-1;
+  int range_end = (upload_first_chunk_sent_ ? this->tft_size_ : std::min(this->tft_size_, 4096))-1;
   ESP_LOGD(TAG, "Range start: %i", range_start);
   if (range_size <= 0 or range_end <= range_start) {
     ESP_LOGD(TAG, "Range end: %i", range_end);
@@ -446,25 +446,6 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
   }
   #endif  // USE_ESP_IDF
 
-  // Nextion wants 4096 bytes at a time. Make chunk_size a multiple of 4096
-  #ifdef USE_ESP32
-  uint32_t chunk_size = 8192;
-  if (heap_caps_get_free_size(MALLOC_CAP_SPIRAM) > 0) {
-    chunk_size = this->content_length_;
-  } else {
-    if (ESP.getFreeHeap() > 81920) {  // Ensure some FreeHeap to other things and limit chunk size
-      chunk_size = ESP.getFreeHeap() - 65536;
-      chunk_size = int(chunk_size / 4096) * 4096;
-      chunk_size = std::min(chunk_size, 32768);  // Limits chunk size to 32kb
-    } else if (ESP.getFreeHeap() < 16384) {
-      chunk_size = 4096;
-    }
-  }
-  #else
-  // NOLINTNEXTLINE(readability-static-accessed-through-instance)
-  uint32_t chunk_size = ESP.getFreeHeap() < 16384 ? 4096 : 8192;
-  #endif
-
   ESP_LOGD(TAG, "Uploading TFT to Nextion:");
   ESP_LOGD(TAG, "  URL: %s", this->tft_url_.c_str());
   ESP_LOGD(TAG, "  File size: %d bytes", this->content_length_);
@@ -477,7 +458,7 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
   int position = 0;
   while (this->content_length_ > 0) {
     delay(500);
-    Nextion::TFTUploadResult upload_result = upload_by_chunks_(http_client, position, chunk_size);
+    Nextion::TFTUploadResult upload_result = upload_by_chunks_(http_client, position);
     if (upload_result != Nextion::TFTUploadResult::OK) {
       ESP_LOGE(TAG, "Error uploading TFT to Nextion!");
       ESP_LOGD(TAG, "Close HTTP connection");
