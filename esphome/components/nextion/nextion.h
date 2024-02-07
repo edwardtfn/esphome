@@ -1220,7 +1220,7 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
    * For Arduino, the function expects an HTTPClient object passed by reference to manage the connection and request headers.
    * For ESP-IDF, an esp_http_client_handle_t is expected, representing the initialized HTTP client handle.
    * 
-   * @param client The HTTP client instance used for making the range request.
+   * @param http_client The HTTP client instance used for making the range request.
    * This parameter should be an HTTPClient object for Arduino and an esp_http_client_handle_t for ESP-IDF.
    * @param transfer_position Reference to an integer specifying the start position for the current data transfer.
    * This value is updated to the next start position upon successful transfer of a chunk.
@@ -1229,9 +1229,9 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
    * or various error codes indicating the nature of any failure encountered during the operation.
    */
   #ifdef ARDUINO
-  TFTUploadResult upload_from_position(HTTPClient &client, int &transfer_position);
+  TFTUploadResult upload_from_position(HTTPClient &http_client, int &transfer_position);
   #elif defined(USE_ESP_IDF)
-  TFTUploadResult upload_from_position(esp_http_client_handle_t client, int &transfer_position);
+  TFTUploadResult upload_from_position(esp_http_client_handle_t http_client, int &transfer_position);
   #endif  // ARDUINO vs USE_ESP_IDF
 
   /**

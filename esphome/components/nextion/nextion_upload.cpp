@@ -106,9 +106,9 @@ uint32_t Nextion::GetFreeHeap_() {
 }
 
 #ifdef ARDUINO
-Nextion::TFTUploadResult Nextion::upload_from_position(HTTPClient &client, int &transfer_position) {
+Nextion::TFTUploadResult Nextion::upload_from_position(HTTPClient &http_client, int &transfer_position) {
 #elif defined(USE_ESP_IDF)
-Nextion::TFTUploadResult Nextion::upload_from_position(esp_http_client_handle_t client, int &transfer_position) {
+Nextion::TFTUploadResult Nextion::upload_from_position(esp_http_client_handle_t http_client, int &transfer_position) {
 #endif  // ARDUINO vs USE_ESP_IDF
   uint range_size = this->tft_size_ - transfer_position;
   ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
@@ -127,18 +127,18 @@ Nextion::TFTUploadResult Nextion::upload_from_position(esp_http_client_handle_t 
   sprintf(range_header, "bytes=%d-%d", transfer_position, range_end);
   ESP_LOGV(TAG, "Requesting range: %s", range_header);
   #ifdef ARDUINO
-  client.addHeader("Range", range_header);
-  code = client.GET();
+  http_client.addHeader("Range", range_header);
+  code = http_client.GET();
   if (code != HTTP_CODE_OK and code != HTTP_CODE_PARTIAL_CONTENT) {
     ESP_LOGW(TAG, "HTTP Request failed; Error: %s",
             HTTPClient::errorToString(code).c_str());
     return Nextion::TFTUploadResult::HttpError_RequestFailed;
   }
   #elif defined(USE_ESP_IDF)
-  esp_http_client_set_header(client, "Range", range_header);
-  ESP_LOGV(TAG, "Opening http connetion");
+  esp_http_client_set_header(http_client, "Range", range_header);
+  ESP_LOGV(TAG, "Opening HTTP connetion");
   esp_err_t err;
-  if ((err = esp_http_client_open(client, 0)) != ESP_OK) {
+  if ((err = esp_http_client_open(http_client, 0)) != ESP_OK) {
     ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
     return Nextion::TFTUploadResult::HttpError_FailedToOpenConnection;
   }
@@ -148,7 +148,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(esp_http_client_handle_t 
   #ifdef ARDUINO
   int content_length = range_end - transfer_position;
   #elif defined(USE_ESP_IDF)
-  int content_length = esp_http_client_fetch_headers(client);
+  int content_length = esp_http_client_fetch_headers(http_client);
   #endif  // ARDUINO vs USE_ESP_IDF
   ESP_LOGV(TAG, "content_length = %d", content_length);
   if (content_length <= 0) {
@@ -180,8 +180,8 @@ Nextion::TFTUploadResult Nextion::upload_from_position(esp_http_client_handle_t 
     int partial_read_len = 0;
     buffer.clear();
     while (read_len < bufferSize && millis() - startTime < timeout) {
-      if (client.getStreamPtr()->available() > 0) {
-        partial_read_len = client.getStreamPtr()->readBytes(reinterpret_cast<char *>(buffer.data()) + read_len, bufferSize - read_len);
+      if (http_client.getStreamPtr()->available() > 0) {
+        partial_read_len = http_client.getStreamPtr()->readBytes(reinterpret_cast<char *>(buffer.data()) + read_len, bufferSize - read_len);
         read_len += partial_read_len;
         if (partial_read_len > 0) {
           App.feed_wdt();
@@ -190,7 +190,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(esp_http_client_handle_t 
       }
     }
     #elif defined(USE_ESP_IDF)
-    int read_len = esp_http_client_read(client, reinterpret_cast<char *>(buffer.data()), bufferSize);
+    int read_len = esp_http_client_read(http_client, reinterpret_cast<char *>(buffer.data()), bufferSize);
     #endif
     if (read_len != bufferSize) {
       // Did not receive the full package within the timeout period
@@ -264,22 +264,22 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
   ESP_LOGV(TAG, "Initializing HTTP client");
   ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
   #ifdef ARDUINO
-  HTTPClient http;
-  http.setTimeout(15000);  // Yes 15 seconds.... Helps 8266s along
+  HTTPClient http_client;
+  http_client.setTimeout(15000);  // Yes 15 seconds.... Helps 8266s along
   bool begin_status = false;
   #ifdef USE_ESP32
-  begin_status = http.begin(this->tft_url_.c_str());
+  begin_status = http_client.begin(this->tft_url_.c_str());
   #endif
   #ifdef USE_ESP8266
   #if USE_ARDUINO_VERSION_CODE >= VERSION_CODE(2, 7, 0)
-  client.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  http_client.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   #elif USE_ARDUINO_VERSION_CODE >= VERSION_CODE(2, 6, 0)
-  client.setFollowRedirects(true);
+  http_client.setFollowRedirects(true);
   #endif
   #if USE_ARDUINO_VERSION_CODE >= VERSION_CODE(2, 6, 0)
-  client.setRedirectLimit(3);
+  http_client.setRedirectLimit(3);
   #endif
-  begin_status = http.begin(*this->get_wifi_client_(), this->tft_url_.c_str());
+  begin_status = http_client.begin(*this->get_wifi_client_(), this->tft_url_.c_str());
   #endif  // USE_ESP8266
   if (!begin_status) {
     this->is_updating_ = false;
@@ -288,15 +288,14 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
   } else {
     ESP_LOGD(TAG, "Connected");
   }
-  http.addHeader("Range", "bytes=0-255");
+  http_client.addHeader("Range", "bytes=0-255");
   const char *header_names[] = {"Content-Range"};
-  http.collectHeaders(header_names, 1);
+  http_client.collectHeaders(header_names, 1);
   ESP_LOGD(TAG, "Requesting URL: %s", this->tft_url_.c_str());
-
-  //http.setReuse(true);
+  http_client.setReuse(true);
   // try up to 5 times. DNS sometimes needs a second try or so
   int tries = 1;
-  int code = http.GET();
+  int code = http_client.GET();
   delay(100);  // NOLINT
 
   App.feed_wdt();
@@ -306,7 +305,7 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
 
     delay(250);  // NOLINT
     App.feed_wdt();
-    code = http.GET();
+    code = http_client.GET();
     ++tries;
   }
 
@@ -315,7 +314,7 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
   else if (code >= 300) return this->upload_end(Nextion::TFTUploadResult::HttpError_ResponseRedirection);
   else if ((code != 200 && code != 206) || tries > 5) return this->upload_end(Nextion::TFTUploadResult::HttpError_ResponseOther);
 
-  String content_range_string = http.header("Content-Range");
+  String content_range_string = http_client.header("Content-Range");
   content_range_string.remove(0, 12);
   this->tft_size_ = content_range_string.toInt();
   
@@ -329,33 +328,33 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
       .max_redirection_count = 10,
   };
   // Initialize the HTTP client with the configuration
-  esp_http_client_handle_t http = esp_http_client_init(&config);
-  if (!http) {
+  esp_http_client_handle_t http_client = esp_http_client_init(&config);
+  if (!http_client) {
     ESP_LOGE(TAG, "Failed to initialize HTTP client.");
     return this->upload_end(Nextion::TFTUploadResult::HttpError_ClientInitialization);
   }
 
-  esp_err_t err = esp_http_client_set_header(http, "Connection", "keep-alive");
+  esp_err_t err = esp_http_client_set_header(http_client, "Connection", "keep-alive");
   if (err != ESP_OK) {
     ESP_LOGE(TAG, "HTTP set header failed: %s", esp_err_to_name(err));
-    esp_http_client_cleanup(http);
+    esp_http_client_cleanup(http_client);
     return this->upload_end(Nextion::TFTUploadResult::HttpError_KeepAlive);
   }
 
   // Perform the HTTP request
   ESP_LOGV(TAG, "Check if the client could connect");
   ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
-  err = esp_http_client_perform(http);
+  err = esp_http_client_perform(http_client);
   if (err != ESP_OK) {
     ESP_LOGE(TAG, "HTTP request failed: %s", esp_err_to_name(err));
-    esp_http_client_cleanup(http);
+    esp_http_client_cleanup(http_client);
     return this->upload_end(Nextion::TFTUploadResult::HttpError_RequestFailed);
   }
 
   // Check the HTTP Status Code
   ESP_LOGV(TAG, "Check the HTTP Status Code");
   ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
-  int status_code = esp_http_client_get_status_code(http);
+  int status_code = esp_http_client_get_status_code(http_client);
   if (status_code > 399) {
     ESP_LOGE(TAG, "HTTP Status Code: %d", status_code);
   } else if (status_code != 200 and status_code != 206) {
@@ -364,7 +363,7 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
     ESP_LOGV(TAG, "HTTP Status Code: %d", status_code);
   }
 
-  this->tft_size_ = esp_http_client_get_content_length(http);
+  this->tft_size_ = esp_http_client_get_content_length(http_client);
   #endif  // ARDUINO vs USE_ESP_IDF
 
   ESP_LOGD(TAG, "TFT file size: %zu bytes", this->tft_size_);
@@ -372,10 +371,10 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
     ESP_LOGE(TAG, "File size check failed.");
     ESP_LOGD(TAG, "Close HTTP connection");
     #ifdef ARDUINO
-    http.end();
+    http_client.end();
     #elif defined(USE_ESP_IDF)
-    esp_http_client_close(http);
-    esp_http_client_cleanup(http);
+    esp_http_client_close(http_client);
+    esp_http_client_cleanup(http_client);
     #endif  // ARDUINO vs USE_ESP_IDF
     ESP_LOGV(TAG, "Connection closed");
     return this->upload_end(Nextion::TFTUploadResult::HttpError_InvalidFileSize);
@@ -428,10 +427,10 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
     ESP_LOGE(TAG, "Preparation for TFT upload failed %d \"%s\"", response[0], response.c_str());
     ESP_LOGD(TAG, "Close HTTP connection");
     #ifdef ARDUINO
-    http.end();
+    http_client.end();
     #elif defined(USE_ESP_IDF)
-    esp_http_client_close(http);
-    esp_http_client_cleanup(http);
+    esp_http_client_close(http_client);
+    esp_http_client_cleanup(http_client);
     #endif  // ARDUINO vs USE_ESP_IDF
     ESP_LOGV(TAG, "Connection closed");
     return this->upload_end(Nextion::TFTUploadResult::NextionError_PreparationFailed);
@@ -450,15 +449,15 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
   int position = 0;
   while (this->content_length_ > 0) {
     delay(500);
-    Nextion::TFTUploadResult upload_result = upload_from_position(http, position);
+    Nextion::TFTUploadResult upload_result = upload_from_position(http_client, position);
     if (upload_result != Nextion::TFTUploadResult::OK) {
       ESP_LOGE(TAG, "Error uploading TFT to Nextion!");
       ESP_LOGD(TAG, "Close HTTP connection");
       #ifdef ARDUINO
-      http.end();
+      http_client.end();
       #elif defined(USE_ESP_IDF)
-      esp_http_client_close(http);
-      esp_http_client_cleanup(http);
+      esp_http_client_close(http_client);
+      esp_http_client_cleanup(http_client);
       #endif  // ARDUINO vs USE_ESP_IDF
       ESP_LOGV(TAG, "Connection closed");
       return this->upload_end(upload_result);
@@ -471,10 +470,10 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
 
   ESP_LOGD(TAG, "Close HTTP connection");
   #ifdef ARDUINO
-  http.end();
+  http_client.end();
   #elif defined(USE_ESP_IDF)
-  esp_http_client_close(http);
-  esp_http_client_cleanup(http);
+  esp_http_client_close(http_client);
+  esp_http_client_cleanup(http_client);
   #endif  // ARDUINO vs USE_ESP_IDF
   ESP_LOGV(TAG, "Connection closed");
   return upload_end(Nextion::TFTUploadResult::OK);
