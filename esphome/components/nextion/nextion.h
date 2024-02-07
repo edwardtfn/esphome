@@ -923,7 +923,7 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
       /**
        * @brief The upload state is unkown.
        */
-      Unknown,
+      UNKNOWN,
 
       /**
        * @brief The upload operation completed successfully.
@@ -933,7 +933,7 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
       /**
        * @brief Another upload is already in progress.
       */
-      UploadInProgress,
+      UPLOAD_IN_PROGRESS,
 
       /**
        * @brief Network is not connected.
@@ -1008,12 +1008,12 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
       /**
        * @brief Preparation for TFT upload failed.
       */
-      NextionError_PreparationFailed,
+      NEXTION_ERROR_PREPARATION_FAILED,
 
       /**
        * @brief Invalid response from Nextion.
       */
-      NextionError_InvalidResponse,
+      NEXTION_ERROR_INVALID_RESPONSE,
 
       // Process Errors
       /**

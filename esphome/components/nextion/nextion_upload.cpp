@@ -32,7 +32,7 @@ const char* Nextion::TFTUploadResultToString(Nextion::TFTUploadResult result) {
         case Nextion::TFTUploadResult::OK:
             return "Upload successful";
 
-        case Nextion::TFTUploadResult::UploadInProgress:
+        case Nextion::TFTUploadResult::UPLOAD_IN_PROGRESS:
             return "Another upload is already in progress";
 
         case Nextion::TFTUploadResult::NetworkError_NotConnected:
@@ -75,10 +75,10 @@ const char* Nextion::TFTUploadResultToString(Nextion::TFTUploadResult result) {
             return "Failed to get content length from HTTP server";
 
         // Nextion Errors
-        case Nextion::TFTUploadResult::NextionError_PreparationFailed:
+        case Nextion::TFTUploadResult::NEXTION_ERROR_PREPARATION_FAILED:
             return "Preparation for TFT upload failed";
 
-        case Nextion::TFTUploadResult::NextionError_InvalidResponse:
+        case Nextion::TFTUploadResult::NEXTION_ERROR_INVALID_RESPONSE:
             return "Invalid response from Nextion";
 
         // Process Errors
@@ -307,7 +307,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(int &transfer_position) {
         esp_http_client_cleanup(client);
         #endif  // ARDUINO vs USE_ESP_IDF
         ESP_LOGV(TAG, "Client closed");
-        return Nextion::TFTUploadResult::NextionError_InvalidResponse;
+        return Nextion::TFTUploadResult::NEXTION_ERROR_INVALID_RESPONSE;
       }
 
       recv_string.clear();
@@ -338,7 +338,7 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
 
   if (this->is_updating_) {
     ESP_LOGW(TAG, "Currently uploading");
-    return Nextion::TFTUploadResult::UploadInProgress;
+    return Nextion::TFTUploadResult::UPLOAD_IN_PROGRESS;
   }
 
   if (!network::is_connected()) {
@@ -509,7 +509,7 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
     ESP_LOGV(TAG, "Preparation for TFT upload done");
   } else {
     ESP_LOGE(TAG, "Preparation for TFT upload failed %d \"%s\"", response[0], response.c_str());
-    return this->upload_end(Nextion::TFTUploadResult::NextionError_PreparationFailed);
+    return this->upload_end(Nextion::TFTUploadResult::NEXTION_ERROR_PREPARATION_FAILED);
   }
 
   delay(500);
