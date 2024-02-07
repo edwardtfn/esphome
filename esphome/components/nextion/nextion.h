@@ -980,6 +980,11 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
       HttpError_ClientInitialization,
 
       /**
+       * @brief HTTP failed to setup a persistent connection.
+      */
+      HttpError_KeepAlive,
+
+      /**
        * @brief HTTP request failed.
       */
       HttpError_RequestFailed,
@@ -1202,12 +1207,33 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
 #endif
   int content_length_ = 0;
   int tft_size_ = 0;
+
   /**
-   * Will request data from the http server and send in 4096 bytes chuncks to Nextion
-   * @param int range_start Position of next byte to transfer (which will be updated when successful).
-   * @return Nextion::TFTUploadResult result of the transfer.
+   * Requests a specific range of data from the HTTP server using a persistent HTTP connection and sends it to the Nextion display in chunks.
+   * This function is designed to work in both the Arduino and ESP-IDF environments,
+   * utilizing a pre-initialized HTTP client to maintain a persistent connection across multiple requests.
+   * The function calculates the range of data to request based on the current position and a predefined chunk size,
+   * then updates the position for the next call.
+   * The data fetched from the HTTP server is immediately sent to the Nextion display in 4096-byte chunks
+   * until the entire range is transferred or an error occurs.
+   * 
+   * For Arduino, the function expects an HTTPClient object passed by reference to manage the connection and request headers.
+   * For ESP-IDF, an esp_http_client_handle_t is expected, representing the initialized HTTP client handle.
+   * 
+   * @param client The HTTP client instance used for making the range request.
+   * This parameter should be an HTTPClient object for Arduino and an esp_http_client_handle_t for ESP-IDF.
+   * @param transfer_position Reference to an integer specifying the start position for the current data transfer.
+   * This value is updated to the next start position upon successful transfer of a chunk.
+   * 
+   * @return Nextion::TFTUploadResult indicating the result of the transfer, which can be an OK status for successful transfers,
+   * or various error codes indicating the nature of any failure encountered during the operation.
    */
-  TFTUploadResult upload_from_position(int &transfer_position);
+  #ifdef ARDUINO
+  TFTUploadResult upload_from_position(HTTPClient &client, int &transfer_position);
+  #elif defined(USE_ESP_IDF)
+  TFTUploadResult upload_from_position(esp_http_client_handle_t client, int &transfer_position);
+  #endif  // ARDUINO vs USE_ESP_IDF
+
   /**
    * Ends the upload process, restart Nextion and, if successful,
    * restarts ESP
