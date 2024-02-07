@@ -115,7 +115,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(esp_http_client_handle_t 
 #endif  // ARDUINO vs USE_ESP_IDF
   uint range_size = this->tft_size_ - transfer_position;
   ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
-  int range_end = (transfer_position == 0) ? std::min(this->tft_size_, 4096) : this->tft_size_;
+  int range_end = (transfer_position == 0) ? std::min(this->tft_size_, 4095) : this->tft_size_;
   if (range_size <= 0 or range_end <= transfer_position) {
     ESP_LOGE(TAG, "Invalid range");
     ESP_LOGD(TAG, "Range start: %i", transfer_position);
