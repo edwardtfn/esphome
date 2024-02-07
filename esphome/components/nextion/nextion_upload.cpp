@@ -115,7 +115,7 @@ Nextion::TFTUploadResult Nextion::upload_by_chunks_(esp_http_client_handle_t htt
 #endif  // ARDUINO vs USE_ESP_IDF
   uint range_size = this->tft_size_ - range_start;
   ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
-  int range_end = (upload_first_chunk_sent_ ? this->tft_size_ : std::min(this->tft_size_, 4096))-1;
+  int range_end = ((upload_first_chunk_sent_ or this->tft_size_ < 4096) ? this->tft_size_ : 4096)-1;
   ESP_LOGD(TAG, "Range start: %i", range_start);
   if (range_size <= 0 or range_end <= range_start) {
     ESP_LOGD(TAG, "Range end: %i", range_end);
