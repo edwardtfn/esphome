@@ -1215,28 +1215,29 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
 
   /**
    * Requests a specific range of data from the HTTP server using a persistent HTTP connection and sends it to the Nextion display in chunks.
-   * This function is designed to work in both the Arduino and ESP-IDF environments,
-   * utilizing a pre-initialized HTTP client to maintain a persistent connection across multiple requests.
-   * The function calculates the range of data to request based on the current position and a predefined chunk size,
-   * then updates the position for the next call.
-   * The data fetched from the HTTP server is immediately sent to the Nextion display in 4096-byte chunks
-   * until the entire range is transferred or an error occurs.
-   * 
-   * For Arduino, the function expects an HTTPClient object passed by reference to manage the connection and request headers.
-   * For ESP-IDF, an esp_http_client_handle_t is expected, representing the initialized HTTP client handle.
-   * 
-   * @param http_client The HTTP client instance used for making the range request.
-   * This parameter should be an HTTPClient object for Arduino and an esp_http_client_handle_t for ESP-IDF.
-   * @param transfer_position Reference to an integer specifying the start position for the current data transfer.
-   * This value is updated to the next start position upon successful transfer of a chunk.
-   * 
-   * @return Nextion::TFTUploadResult indicating the result of the transfer, which can be an OK status for successful transfers,
-   * or various error codes indicating the nature of any failure encountered during the operation.
+   * Designed to work in both Arduino and ESP-IDF environments, this function utilizes a pre-initialized HTTP client
+   * to maintain a persistent connection for consecutive data range requests.
+   * It calculates the data range to request based on the current position (`range_start`) and a predefined `chunk_size`, 
+   * then updates the position for subsequent calls. Data fetched from the HTTP server is sent to the Nextion display in chunks
+   * up to the specified `chunk_size` bytes each until the entire requested range is transferred or an error occurs.
+   *
+   * In the Arduino environment, the function expects an HTTPClient object passed by reference, used to manage the connection
+   * and request headers. For ESP-IDF, it expects an esp_http_client_handle_t, representing the initialized HTTP client handle.
+   *
+   * @param http_client The HTTP client instance used for making the range request. This should be an HTTPClient object
+   * for Arduino and an esp_http_client_handle_t for ESP-IDF.
+   * @param range_start A reference to an integer specifying the start position for the current data transfer.
+   * This value is updated to reflect the next start position after a successful chunk transfer, facilitating sequential chunk requests.
+   * @param chunk_size Specifies the maximum size of each data chunk fetched from the HTTP server, in bytes. This size determines
+   * how data is partitioned for transmission to the Nextion display, ensuring efficient use of memory and network resources.
+   *
+   * @return A Nextion::TFTUploadResult indicating the result of the transfer. This can be an OK status for successful
+   * transfers or various error codes indicating the nature of any failure encountered during the operation.
    */
   #ifdef ARDUINO
-  TFTUploadResult upload_from_position(HTTPClient &http_client, int &transfer_position);
+  TFTUploadResult upload_by_chunks_(HTTPClient &http_client, int &range_start, uint32_t chunk_size);
   #elif defined(USE_ESP_IDF)
-  TFTUploadResult upload_from_position(esp_http_client_handle_t http_client, int &transfer_position);
+  TFTUploadResult upload_by_chunks_(esp_http_client_handle_t http_client, int &range_start, uint32_t chunk_size);
   #endif  // ARDUINO vs USE_ESP_IDF
 
   /**

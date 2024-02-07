@@ -109,25 +109,23 @@ uint32_t Nextion::GetFreeHeap_() {
 }
 
 #ifdef ARDUINO
-Nextion::TFTUploadResult Nextion::upload_from_position(HTTPClient &http_client, int &transfer_position) {
+Nextion::TFTUploadResult Nextion::upload_by_chunks_(HTTPClient &http_client, int &range_start, uint32_t chunk_size) {
 #elif defined(USE_ESP_IDF)
-Nextion::TFTUploadResult Nextion::upload_from_position(esp_http_client_handle_t http_client, int &transfer_position) {
+Nextion::TFTUploadResult Nextion::upload_by_chunks_(esp_http_client_handle_t http_client, int &range_start, uint32_t chunk_size) {
 #endif  // ARDUINO vs USE_ESP_IDF
-  uint range_size = this->tft_size_ - transfer_position;
+  uint range_size = this->tft_size_ - range_start;
   ESP_LOGV(TAG, "Free heap: %" PRIu32, this->GetFreeHeap_());
-  int range_end = (transfer_position == 0) ? std::min(this->tft_size_, 4095) : this->tft_size_;
-  if (range_size <= 0 or range_end <= transfer_position) {
-    ESP_LOGE(TAG, "Invalid range");
-    ESP_LOGD(TAG, "Range start: %i", transfer_position);
+  int range_end = (upload_first_chunk_sent_ ? this->tft_size_ : std::min(this->tft_size_, chunk_size))-1;
+  ESP_LOGD(TAG, "Range start: %i", range_start);
+  if (range_size <= 0 or range_end <= range_start) {
     ESP_LOGD(TAG, "Range end: %i", range_end);
     ESP_LOGD(TAG, "Range size: %i", range_size);
+    ESP_LOGE(TAG, "Invalid range");
     return Nextion::TFTUploadResult::ProcessError_InvalidRange;
-  } else {
-    ESP_LOGV(TAG, "Position:  %i", transfer_position);
   }
 
   char range_header[64];
-  sprintf(range_header, "bytes=%d-%d", transfer_position, range_end);
+  sprintf(range_header, "bytes=%d-%d", range_start, range_end);
   ESP_LOGV(TAG, "Requesting range: %s", range_header);
   #ifdef ARDUINO
   http_client.addHeader("Range", range_header);
@@ -149,7 +147,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(esp_http_client_handle_t 
 
   ESP_LOGV(TAG, "Fetch content length");
   #ifdef ARDUINO
-  int content_length = range_end - transfer_position;
+  int content_length = range_end - range_start;
   #elif defined(USE_ESP_IDF)
   int content_length = esp_http_client_fetch_headers(http_client);
   #endif  // ARDUINO vs USE_ESP_IDF
@@ -222,7 +220,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(esp_http_client_handle_t 
         if (result > 0) {
           ESP_LOGI(TAG, "Nextion reported new range %" PRIu32, result);
           this->content_length_ = this->tft_size_ - result;
-          transfer_position = result;
+          range_start = result;
           return Nextion::TFTUploadResult::OK;
         }
       } else if (recv_string[0] != 0x05) {  // 0x05 == "ok"
@@ -241,7 +239,7 @@ Nextion::TFTUploadResult Nextion::upload_from_position(esp_http_client_handle_t 
       break;  // Exit the loop on error
     }
   }
-  transfer_position = range_end + 1;
+  range_start = range_end + 1;
   return Nextion::TFTUploadResult::OK;
 }
 
@@ -439,11 +437,6 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
     return this->upload_end(Nextion::TFTUploadResult::NextionError_PreparationFailed);
   }
 
-  ESP_LOGD(TAG, "Uploading TFT to Nextion:");
-  ESP_LOGD(TAG, "  URL: %s", this->tft_url_.c_str());
-  ESP_LOGD(TAG, "  File size: %d bytes", this->content_length_);
-  ESP_LOGD(TAG, "  Free heap: %" PRIu32, this->GetFreeHeap_());
-
   #ifdef USE_ESP_IDF
   ESP_LOGV(TAG, "Change the method to GET before starting the download");
   esp_err_t set_method_result = esp_http_client_set_method(http_client, HTTP_METHOD_GET);
@@ -453,6 +446,30 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
   }
   #endif  // USE_ESP_IDF
 
+  // Nextion wants 4096 bytes at a time. Make chunk_size a multiple of 4096
+  #ifdef USE_ESP32
+  uint32_t chunk_size = 8192;
+  if (heap_caps_get_free_size(MALLOC_CAP_SPIRAM) > 0) {
+    chunk_size = this->content_length_;
+  } else {
+    if (ESP.getFreeHeap() > 81920) {  // Ensure some FreeHeap to other things and limit chunk size
+      chunk_size = ESP.getFreeHeap() - 65536;
+      chunk_size = int(chunk_size / 4096) * 4096;
+      chunk_size = std::min(chunk_size, 32768);  // Limits chunk size to 32kb
+    } else if (ESP.getFreeHeap() < 16384) {
+      chunk_size = 4096;
+    }
+  }
+  #else
+  // NOLINTNEXTLINE(readability-static-accessed-through-instance)
+  uint32_t chunk_size = ESP.getFreeHeap() < 16384 ? 4096 : 8192;
+  #endif
+
+  ESP_LOGD(TAG, "Uploading TFT to Nextion:");
+  ESP_LOGD(TAG, "  URL: %s", this->tft_url_.c_str());
+  ESP_LOGD(TAG, "  File size: %d bytes", this->content_length_);
+  ESP_LOGD(TAG, "  Free heap: %" PRIu32, this->GetFreeHeap_());
+
   // Proceed with the content download as before
 
   ESP_LOGV(TAG, "Starting transfer by chunks loop");
@@ -460,7 +477,7 @@ Nextion::TFTUploadResult Nextion::upload_tft() {
   int position = 0;
   while (this->content_length_ > 0) {
     delay(500);
-    Nextion::TFTUploadResult upload_result = upload_from_position(http_client, position);
+    Nextion::TFTUploadResult upload_result = upload_by_chunks_(http_client, position, chunk_size);
     if (upload_result != Nextion::TFTUploadResult::OK) {
       ESP_LOGE(TAG, "Error uploading TFT to Nextion!");
       ESP_LOGD(TAG, "Close HTTP connection");
