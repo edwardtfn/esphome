@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include "nextion_base.h"
+#include "nextion_component.h"
+
 #ifdef ARDUINO
 #ifdef USE_ESP32
 #include <HTTPClient.h>
@@ -17,6 +20,11 @@
 namespace esphome {
 namespace nextion {
 
+class Nextion;
+class NextionComponentBase;
+
+
+class Nextion : public NextionBase, public PollingComponent, public uart::UARTDevice {
 public:
   /**
    * @enum TFTUploadResult
@@ -307,5 +315,5 @@ protected:
 
 }  // namespace nextion
 }  // namespace esphome
-
+};
 #endif  // USE_NEXTION_TFT_UPLOAD
