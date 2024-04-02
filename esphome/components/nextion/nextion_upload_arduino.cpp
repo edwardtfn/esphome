@@ -1,8 +1,8 @@
-#include "nextion.h"
-
 #ifdef USE_NEXTION_TFT_UPLOAD
 #ifdef ARDUINO
 
+#include "nextion.h"
+#include "nextion_upload.h"
 #include "esphome/core/application.h"
 #include "esphome/core/defines.h"
 #include "esphome/core/util.h"

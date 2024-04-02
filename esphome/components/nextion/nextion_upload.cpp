@@ -1,6 +1,7 @@
-#include "nextion.h"
-
 #ifdef USE_NEXTION_TFT_UPLOAD
+
+#include "nextion.h"
+#include "nextion_upload.h"
 
 namespace esphome {
 namespace nextion {
