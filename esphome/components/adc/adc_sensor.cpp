@@ -62,7 +62,7 @@ extern "C"
   }
 
   // load characteristics for each attenuation
-  for (int32_t i = 0; i <= ADC_ATTEN_DB_11; i++) {
+  for (int32_t i = 0; i <= ADC_ATTEN_DB_12; i++) {
     auto adc_unit = channel1_ != ADC1_CHANNEL_MAX ? ADC_UNIT_1 : ADC_UNIT_2;
     auto cal_value = esp_adc_cal_characterize(adc_unit, (adc_atten_t) i, ADC_WIDTH_MAX_SOC_BITS,
                                               1100,  // default vref
@@ -118,7 +118,7 @@ void ADCSensor::dump_config() {
       case ADC_ATTEN_DB_6:
         ESP_LOGCONFIG(TAG, " Attenuation: 6db");
         break;
-      case ADC_ATTEN_DB_11:
+      case ADC_ATTEN_DB_12:
         ESP_LOGCONFIG(TAG, " Attenuation: 11db");
         break;
       default:  // This is to satisfy the unused ADC_ATTEN_MAX
@@ -186,7 +186,7 @@ float ADCSensor::sample() {
   int raw11 = ADC_MAX, raw6 = ADC_MAX, raw2 = ADC_MAX, raw0 = ADC_MAX;
 
   if (channel1_ != ADC1_CHANNEL_MAX) {
-    adc1_config_channel_atten(channel1_, ADC_ATTEN_DB_11);
+    adc1_config_channel_atten(channel1_, ADC_ATTEN_DB_12);
     raw11 = adc1_get_raw(channel1_);
     if (raw11 < ADC_MAX) {
       adc1_config_channel_atten(channel1_, ADC_ATTEN_DB_6);
@@ -201,7 +201,7 @@ float ADCSensor::sample() {
       }
     }
   } else if (channel2_ != ADC2_CHANNEL_MAX) {
-    adc2_config_channel_atten(channel2_, ADC_ATTEN_DB_11);
+    adc2_config_channel_atten(channel2_, ADC_ATTEN_DB_12);
     adc2_get_raw(channel2_, ADC_WIDTH_MAX_SOC_BITS, &raw11);
     if (raw11 < ADC_MAX) {
       adc2_config_channel_atten(channel2_, ADC_ATTEN_DB_6);
@@ -221,7 +221,7 @@ float ADCSensor::sample() {
     return NAN;
   }
 
-  uint32_t mv11 = esp_adc_cal_raw_to_voltage(raw11, &cal_characteristics_[(int32_t) ADC_ATTEN_DB_11]);
+  uint32_t mv11 = esp_adc_cal_raw_to_voltage(raw11, &cal_characteristics_[(int32_t) ADC_ATTEN_DB_12]);
   uint32_t mv6 = esp_adc_cal_raw_to_voltage(raw6, &cal_characteristics_[(int32_t) ADC_ATTEN_DB_6]);
   uint32_t mv2 = esp_adc_cal_raw_to_voltage(raw2, &cal_characteristics_[(int32_t) ADC_ATTEN_DB_2_5]);
   uint32_t mv0 = esp_adc_cal_raw_to_voltage(raw0, &cal_characteristics_[(int32_t) ADC_ATTEN_DB_0]);
