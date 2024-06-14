@@ -26,33 +26,33 @@ License along with NeoPixel.  If not, see
 -------------------------------------------------------------------------*/
 #pragma once
 
-#include "colors/NeoHueBlend.h"
+#include "NeoHueBlend.h"
 
-#include "colors/RgbColorIndexes.h"
-#include "colors/RgbColorBase.h"
+#include "RgbColorIndexes.h"
+#include "RgbColorBase.h"
 
-#include "colors/RgbColor.h"
-#include "colors/Rgb16Color.h"
-#include "colors/Rgb48Color.h"
+#include "RgbColor.h"
+#include "Rgb16Color.h"
+#include "Rgb48Color.h"
 
-#include "colors/HslColor.h"
-#include "colors/HsbColor.h"
-#include "colors/HtmlColor.h"
+#include "HslColor.h"
+#include "HsbColor.h"
+#include "HtmlColor.h"
 
-#include "colors/RgbwColor.h"
-#include "colors/Rgbw64Color.h"
+#include "RgbwColor.h"
+#include "Rgbw64Color.h"
 
-#include "colors/RgbwwColor.h"
-#include "colors/Rgbww80Color.h"
+#include "RgbwwColor.h"
+#include "Rgbww80Color.h"
 
-#include "colors/RgbwwwColor.h"
+#include "RgbwwwColor.h"
 
-#include "colors/SegmentDigit.h"
+#include "SegmentDigit.h"
 
-#include "colors/NeoGamma.h"
-#include "colors/NeoGammaEquationMethod.h"
-#include "colors/NeoGammaCieLabEquationMethod.h"
-#include "colors/NeoGammaTableMethod.h"
-#include "colors/NeoGammaDynamicTableMethod.h"
-#include "colors/NeoGammaNullMethod.h"
-#include "colors/NeoGammaInvertMethod.h"
+#include "NeoGamma.h"
+#include "NeoGammaEquationMethod.h"
+#include "NeoGammaCieLabEquationMethod.h"
+#include "NeoGammaTableMethod.h"
+#include "NeoGammaDynamicTableMethod.h"
+#include "NeoGammaNullMethod.h"
+#include "NeoGammaInvertMethod.h"
