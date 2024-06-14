@@ -28,57 +28,57 @@ License along with NeoPixel.  If not, see
 
 // Generic Two Wire (clk and data) methods
 //
-#include "methods/DotStarGenericMethod.h"
-#include "methods/Lpd8806GenericMethod.h"
-#include "methods/Lpd6803GenericMethod.h"
-#include "methods/Ws2801GenericMethod.h"
-#include "methods/P9813GenericMethod.h"
-#include "methods/Tlc5947GenericMethod.h"
-#include "methods/Tlc59711GenericMethod.h"
-#include "methods/Sm16716GenericMethod.h"
-#include "methods/Mbi6033GenericMethod.h"
-#include "methods/Hd108GenericMethod.h"
+#include "DotStarGenericMethod.h"
+#include "Lpd8806GenericMethod.h"
+#include "Lpd6803GenericMethod.h"
+#include "Ws2801GenericMethod.h"
+#include "P9813GenericMethod.h"
+#include "Tlc5947GenericMethod.h"
+#include "Tlc59711GenericMethod.h"
+#include "Sm16716GenericMethod.h"
+#include "Mbi6033GenericMethod.h"
+#include "Hd108GenericMethod.h"
 
 //Adafruit Pixie via UART, not platform specific
 //
-#include "methods/PixieStreamMethod.h"
+#include "PixieStreamMethod.h"
 
 // Platform specific and One Wire (data) methods
 //
 #if defined(ARDUINO_ARCH_ESP8266)
 
-#include "methods/NeoEsp8266DmaMethod.h"
-#include "methods/NeoEsp8266I2sDmx512Method.h"
-#include "methods/NeoEsp8266UartMethod.h"
-#include "methods/NeoEspBitBangMethod.h"
+#include "NeoEsp8266DmaMethod.h"
+#include "NeoEsp8266I2sDmx512Method.h"
+#include "NeoEsp8266UartMethod.h"
+#include "NeoEspBitBangMethod.h"
 
 #elif defined(ARDUINO_ARCH_ESP32)
 
 #if !defined(CONFIG_IDF_TARGET_ESP32C6) && !defined(CONFIG_IDF_TARGET_ESP32H2)
-#include "methods/NeoEsp32I2sMethod.h"
-#include "methods/NeoEsp32RmtMethod.h"
-#include "methods/DotStarEsp32DmaSpiMethod.h"
-#include "methods/NeoEsp32I2sXMethod.h"
+#include "NeoEsp32I2sMethod.h"
+#include "NeoEsp32RmtMethod.h"
+#include "DotStarEsp32DmaSpiMethod.h"
+#include "NeoEsp32I2sXMethod.h"
 
 
 #endif
-#include "methods/NeoEspBitBangMethod.h"
+#include "NeoEspBitBangMethod.h"
 
 #elif defined(ARDUINO_ARCH_NRF52840) // must be before __arm__
 
-#include "methods/NeoNrf52xMethod.h"
+#include "NeoNrf52xMethod.h"
 
 #elif defined(ARDUINO_ARCH_RP2040) // must be before __arm__
 
-#include "methods/Rp2040/NeoRp2040x4Method.h"
+#include "Rp2040/NeoRp2040x4Method.h"
 
 #elif defined(__arm__) // must be before ARDUINO_ARCH_AVR due to Teensy incorrectly having it set
 
-#include "methods/NeoArmMethod.h"
+#include "NeoArmMethod.h"
 
 #elif defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_MEGAAVR)
 
-#include "methods/NeoAvrMethod.h"
+#include "NeoAvrMethod.h"
 
 #else
 #error "Platform Currently Not Supported, please add an Issue at Github/Makuna/NeoPixelBus"
