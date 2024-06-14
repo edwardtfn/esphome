@@ -169,10 +169,8 @@ def _validate_method(value):
 
 
 CONFIG_SCHEMA = cv.All(
-    cv.only_with_arduino,
     cv.require_framework_version(
         esp8266_arduino=cv.Version(2, 4, 0),
-        esp32_arduino=cv.Version(0, 0, 0),
     ),
     light.ADDRESSABLE_LIGHT_SCHEMA.extend(
         {
