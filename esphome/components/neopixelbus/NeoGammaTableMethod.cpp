@@ -25,7 +25,7 @@ License along with NeoPixel.  If not, see
 -------------------------------------------------------------------------*/
 
 #include <Arduino.h>
-#include "../NeoUtil.h"
+#include "NeoUtil.h"
 #include "NeoGammaTableMethod.h"
 
 const uint8_t NeoGammaTableMethod::_table[] = {
