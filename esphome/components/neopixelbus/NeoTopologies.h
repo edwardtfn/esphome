@@ -26,14 +26,14 @@ License along with NeoPixel.  If not, see
 -------------------------------------------------------------------------*/
 #pragma once
 
-#include "topologies/ColumnMajorAlternatingLayout.h"
-#include "topologies/ColumnMajorLayout.h"
-#include "topologies/RowMajorAlternatingLayout.h"
-#include "topologies/RowMajorLayout.h"
+#include "ColumnMajorAlternatingLayout.h"
+#include "ColumnMajorLayout.h"
+#include "RowMajorAlternatingLayout.h"
+#include "RowMajorLayout.h"
 
-#include "topologies/NeoTopology.h"
-#include "topologies/NeoRingTopology.h"
-#include "topologies/NeoTiles.h"
-#include "topologies/NeoMosaic.h"
+#include "NeoTopology.h"
+#include "NeoRingTopology.h"
+#include "NeoTiles.h"
+#include "NeoMosaic.h"
 
 
