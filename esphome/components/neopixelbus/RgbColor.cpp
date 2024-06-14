@@ -25,7 +25,7 @@ License along with NeoPixel.  If not, see
 -------------------------------------------------------------------------*/
 
 #include <Arduino.h>
-#include "../NeoSettings.h"
+#include "NeoSettings.h"
 #include "RgbColorBase.h"
 #include "RgbColor.h"
 #include "Rgb16Color.h"

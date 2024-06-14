@@ -31,7 +31,7 @@ License along with NeoPixel.  If not, see
 
 #if defined(ARDUINO_ARCH_ESP32) && !defined(CONFIG_IDF_TARGET_ESP32C6) && !defined(CONFIG_IDF_TARGET_ESP32H2)
 
-#include "../NeoSettings.h"
+#include "NeoSettings.h"
 #include "../NeoBusChannel.h"
 #include "NeoEsp32RmtMethod.h"
 
