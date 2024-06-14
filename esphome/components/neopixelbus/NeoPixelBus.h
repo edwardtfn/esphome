@@ -32,15 +32,15 @@ License along with NeoPixel.  If not, see
 const uint8_t NEO_DIRTY = 0x80; // a change was made to pixel data that requires a show
 const uint16_t PixelIndex_OutOfBounds = 0xffff;
 
-#include "internal/NeoUtil.h"
-#include "internal/animations/NeoEase.h"
-#include "internal/NeoSettings.h"
-#include "internal/NeoColors.h"
-#include "internal/NeoColorFeatures.h"
-#include "internal/NeoTopologies.h"
-#include "internal/NeoBuffers.h"
-#include "internal/NeoBusChannel.h"
-#include "internal/NeoMethods.h"
+#include "NeoUtil.h"
+#include "NeoEase.h"
+#include "NeoSettings.h"
+#include "NeoColors.h"
+#include "NeoColorFeatures.h"
+#include "NeoTopologies.h"
+#include "NeoBuffers.h"
+#include "NeoBusChannel.h"
+#include "NeoMethods.h"
 
 
 template<typename T_COLOR_FEATURE, typename T_METHOD> class NeoPixelBus
