@@ -28,44 +28,44 @@ License along with NeoPixel.  If not, see
 
 // Core Element base classes
 // 
-#include "features/NeoElementsNoSettings.h"
-#include "features/NeoByteElements.h"
+#include "NeoElementsNoSettings.h"
+#include "NeoByteElements.h"
 
 // Core Feature base classes
-#include "features/Neo2Byte555Feature.h"
-#include "features/Neo3ByteFeature.h"
-#include "features/Neo3Byte777Feature.h"
-#include "features/Neo4ByteFeature.h"
-#include "features/Neo5ByteFeature.h"
-#include "features/Neo6ByteFeature.h"
-#include "features/Neo6xByteFeature.h"
-#include "features/Neo6xxByteFeature.h"
-#include "features/Neo3WordFeature.h"
-#include "features/Neo4WordFeature.h"
-#include "features/Neo5WordFeature.h"
+#include "Neo2Byte555Feature.h"
+#include "Neo3ByteFeature.h"
+#include "Neo3Byte777Feature.h"
+#include "Neo4ByteFeature.h"
+#include "Neo5ByteFeature.h"
+#include "Neo6ByteFeature.h"
+#include "Neo6xByteFeature.h"
+#include "Neo6xxByteFeature.h"
+#include "Neo3WordFeature.h"
+#include "Neo4WordFeature.h"
+#include "Neo5WordFeature.h"
 
-#include "features/DotStarX4ByteFeature.h"
-#include "features/DotStarL4ByteFeature.h"
-#include "features/DotStarX4WordFeature.h"
-#include "features/DotStarL4WordFeature.h"
+#include "DotStarX4ByteFeature.h"
+#include "DotStarL4ByteFeature.h"
+#include "DotStarX4WordFeature.h"
+#include "DotStarL4WordFeature.h"
 
 // NeoPixel Features
 //
-#include "features/NeoRgbFeatures.h"
-#include "features/NeoRgbwFeatures.h"
-#include "features/NeoRgbwwFeatures.h"
-#include "features/NeoRgb48Features.h"
-#include "features/NeoRgbw64Features.h"
-#include "features/NeoRgbww80Features.h"
+#include "NeoRgbFeatures.h"
+#include "NeoRgbwFeatures.h"
+#include "NeoRgbwwFeatures.h"
+#include "NeoRgb48Features.h"
+#include "NeoRgbw64Features.h"
+#include "NeoRgbww80Features.h"
 
-#include "features/NeoRgbwxxFeatures.h"
-#include "features/NeoRgbcwxFeatures.h"
-#include "features/NeoRgbwwwFeatures.h"
-#include "features/NeoSm168x3Features.h"
-#include "features/NeoSm168x4Features.h"
-#include "features/NeoSm168x5Features.h"
-#include "features/NeoTm1814Features.h"
-#include "features/NeoTm1914Features.h"
+#include "NeoRgbwxxFeatures.h"
+#include "NeoRgbcwxFeatures.h"
+#include "NeoRgbwwwFeatures.h"
+#include "NeoSm168x3Features.h"
+#include "NeoSm168x4Features.h"
+#include "NeoSm168x5Features.h"
+#include "NeoTm1814Features.h"
+#include "NeoTm1914Features.h"
 
 typedef NeoRgb48Feature NeoRgbUcs8903Feature;
 typedef NeoRgbw64Feature NeoRgbwUcs8904Feature;
@@ -73,17 +73,17 @@ typedef NeoGrb48Feature NeoGrbWs2816Feature;
 
 // DotStart Features
 // 
-#include "features/DotStarRgbFeatures.h"
-#include "features/DotStarLrgbFeatures.h"
-#include "features/Lpd6803RgbFeatures.h"
-#include "features/Lpd8806RgbFeatures.h"
+#include "DotStarRgbFeatures.h"
+#include "DotStarLrgbFeatures.h"
+#include "Lpd6803RgbFeatures.h"
+#include "Lpd8806RgbFeatures.h"
 
-#include "features/P9813BgrFeature.h"
-#include "features/Tlc59711RgbFeatures.h"
+#include "P9813BgrFeature.h"
+#include "Tlc59711RgbFeatures.h"
 
 // 7 Segment Features
 //
-#include "features/NeoAbcdefgpsSegmentFeature.h"
-#include "features/NeoBacedfpgsSegmentFeature.h"
+#include "NeoAbcdefgpsSegmentFeature.h"
+#include "NeoBacedfpgsSegmentFeature.h"
 
 typedef NeoAbcdefgpsSegmentFeature SevenSegmentFeature; // Abcdefg order is default
