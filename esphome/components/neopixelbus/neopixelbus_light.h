@@ -9,7 +9,11 @@
 #include "esphome/components/light/light_output.h"
 #include "esphome/components/light/addressable_light.h"
 
+#ifdef USE_ARDUINO
 #include "NeoPixelBus.h"
+#else
+#include "src\NeoPixelBus.h"
+#endif
 
 namespace esphome {
 namespace neopixelbus {
