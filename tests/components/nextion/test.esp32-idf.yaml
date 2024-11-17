@@ -1,6 +1,6 @@
 substitutions:
-  tx_pin: 17
-  rx_pin: 16
+  tx_pin: '17'
+  rx_pin: '16'
 
 packages:
   base: !include common.yaml
