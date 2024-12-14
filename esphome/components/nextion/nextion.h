@@ -1263,6 +1263,8 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
    */
   bool is_updating() override;
 
+  bool is_connected() { return this->is_connected_; }
+
  protected:
 #ifdef USE_NEXTION_COMMAND_SPACING
   NextionCommandPacer command_pacer_{0};
@@ -1363,8 +1365,6 @@ class Nextion : public NextionBase, public PollingComponent, public uart::UARTDe
   uint32_t get_free_heap_();
 
 #endif  // USE_NEXTION_TFT_UPLOAD
-
-  bool get_is_connected_() { return this->is_connected_; }
 
   bool check_connect_();
 

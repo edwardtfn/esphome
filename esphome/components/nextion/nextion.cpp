@@ -51,7 +51,7 @@ bool Nextion::send_command_(const std::string &command) {
 }
 
 bool Nextion::check_connect_() {
-  if (this->get_is_connected_())
+  if (this->is_connected_)
     return true;
 
   // Check if the handshake should be skipped for the Nextion connection
