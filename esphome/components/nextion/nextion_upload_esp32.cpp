@@ -69,6 +69,7 @@ int Nextion::upload_by_chunks_(esp_http_client_handle_t http_client, uint32_t &r
     int partial_read_len = 0;
     uint8_t retries = 0;
     // Attempt to read the chunk with retries.
+    const uint32_t read_start = App.get_loop_component_start_time();
     while (retries < this->tft_upload_http_retries_ && read_len < buffer_size) {
       partial_read_len =
           esp_http_client_read(http_client, reinterpret_cast<char *>(buffer) + read_len, buffer_size - read_len);
@@ -79,8 +80,9 @@ int Nextion::upload_by_chunks_(esp_http_client_handle_t http_client, uint32_t &r
       } else {
         // If no data was read, increment retries and log for diagnostics.
         retries++;
-        ESP_LOGW(TAG, "Retry %" PRIu8 "/%" PRIu8 ": read %d, got %" PRIu16 "/%" PRIu16 " bytes", retries,
-                 this->tft_upload_http_retries_, partial_read_len, read_len, buffer_size);
+        ESP_LOGW(TAG, "Retry %" PRIu8 "/%" PRIu8 ": read %d, got %" PRIu16 "/%" PRIu16 " bytes after %" PRIu32 "ms",
+                retries, this->tft_upload_http_retries_, partial_read_len, read_len, buffer_size,
+                App.get_loop_component_start_time() - read_start);
         vTaskDelay(pdMS_TO_TICKS(2));  // NOLINT
       }
       App.feed_wdt();  // Feed the watchdog timer.
