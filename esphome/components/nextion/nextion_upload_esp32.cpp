@@ -197,6 +197,7 @@ bool Nextion::upload_tft(uint32_t baud_rate, bool exit_reparse) {
   ESP_LOGD(TAG, "Baud rate: %" PRIu32, baud_rate);
 
   // Define the configuration for the HTTP client
+  ESP_LOGD(TAG, "HTTP client timeout: %" PRIu16 "ms", this->tft_upload_http_timeout_);
   ESP_LOGV(TAG, "Init HTTP client, heap: %" PRIu32, esp_get_free_heap_size());
   esp_http_client_config_t config = {
       .url = this->tft_url_.c_str(),
