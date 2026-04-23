@@ -77,8 +77,10 @@ int Nextion::upload_by_chunks_(esp_http_client_handle_t http_client, uint32_t &r
         // Reset retries on successful read.
         retries = 0;
       } else {
-        // If no data was read, increment retries.
+        // If no data was read, increment retries and log for diagnostics.
         retries++;
+        ESP_LOGW(TAG, "Retry %" PRIu8 "/%" PRIu8 ": read %d, got %" PRIu16 "/%" PRIu16 " bytes", retries,
+                 this->tft_upload_http_retries_, partial_read_len, read_len, buffer_size);
         vTaskDelay(pdMS_TO_TICKS(2));  // NOLINT
       }
       App.feed_wdt();  // Feed the watchdog timer.
