@@ -100,7 +100,7 @@ int Nextion::upload_by_chunks_(esp_http_client_handle_t http_client, uint32_t &r
       recv_string.clear();
       this->write_array(buffer, buffer_size);
       App.feed_wdt();
-      this->recv_ret_string_(5000, true);
+      this->recv_ret_string_(recv_string, 5000, true);
       ESP_LOGD(TAG, "Display resp after chunk: [%zu bytes] [%s]", recv_string.size(),
               recv_string.empty() ? "(empty)" :
               format_hex_pretty_to(hex_buf, reinterpret_cast<const uint8_t *>(recv_string.data()), 
