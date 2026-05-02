@@ -101,6 +101,10 @@ int Nextion::upload_by_chunks_(esp_http_client_handle_t http_client, uint32_t &r
       this->write_array(buffer, buffer_size);
       App.feed_wdt();
       this->recv_ret_string_(recv_string, upload_first_chunk_sent_ ? 2500 : 5000, true);
+      ESP_LOGD(TAG, "Display resp after chunk: [%zu bytes] [%s]", recv_string.size(),
+              recv_string.empty() ? "(empty)" :
+              format_hex_pretty_to(hex_buf, reinterpret_cast<const uint8_t *>(recv_string.data()), 
+                                    std::min(recv_string.size(), size_t{16})));
       this->content_length_ -= read_len;
       const float upload_percentage = 100.0f * (this->tft_size_ - this->content_length_) / this->tft_size_;
 #ifdef USE_PSRAM
