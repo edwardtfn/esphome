@@ -113,26 +113,32 @@ int Nextion::upload_by_chunks_(esp_http_client_handle_t http_client, uint32_t &r
                     ? "(empty)"
                     : format_hex_pretty_to(hex_buf_dbg, reinterpret_cast<const uint8_t *>(recv_string.data()),
                                             std::min(recv_string.size(), size_t{16})));
-        // Check whether more bytes are still pending in the UART RX buffer
-        // immediately after recv_ret_string_ returned.
-        const size_t pending = this->available();
-        ESP_LOGD(TAG, "UART pending after recv_ret_string_: %zu bytes", pending);
-        if (pending > 0 && pending <= 16) {
-          uint8_t extra[16];
-          size_t got = 0;
-          while (got < pending) {
+
+        // Wait up to 500ms more, polling the UART, to see if extra bytes arrive late.
+        uint8_t extra[16];
+        size_t got = 0;
+        const uint32_t deadline = millis() + 500;
+        while (millis() < deadline && got < sizeof(extra)) {
+          if (this->available()) {
             uint8_t b = 0;
-            if (!this->read_byte(&b)) {
-              break;
+            if (this->read_byte(&b)) {
+              extra[got++] = b;
             }
-            extra[got++] = b;
+          } else {
+            vTaskDelay(pdMS_TO_TICKS(5));  // NOLINT
+            App.feed_wdt();
           }
+        }
+        if (got > 0) {
           char hex_buf_extra[format_hex_pretty_size(16)];
-          ESP_LOGD(TAG, "UART drained extra: [%zu bytes] [%s]", got,
+          ESP_LOGD(TAG, "UART late bytes after 500ms: [%zu] [%s]", got,
                   format_hex_pretty_to(hex_buf_extra, extra, got));
+        } else {
+          ESP_LOGD(TAG, "UART late bytes after 500ms: NONE");
         }
       }
       // === END DIAGNOSTIC ===
+
       this->content_length_ -= read_len;
       const float upload_percentage = 100.0f * (this->tft_size_ - this->content_length_) / this->tft_size_;
 #ifdef USE_PSRAM
