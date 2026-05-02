@@ -105,40 +105,32 @@ int Nextion::upload_by_chunks_(esp_http_client_handle_t http_client, uint32_t &r
       App.feed_wdt();
       this->recv_ret_string_(recv_string, NEXTION_UPLOAD_ACK_TIMEOUT_MS, true);
 
-      // === BEGIN DIAGNOSTIC (remove before merge) ===
-      {
-        char hex_buf_dbg[format_hex_pretty_size(NEXTION_MAX_RESPONSE_LOG_BYTES)];
-        ESP_LOGD(TAG, "Display resp: [%zu bytes] [%s]", recv_string.size(),
-                recv_string.empty()
-                    ? "(empty)"
-                    : format_hex_pretty_to(hex_buf_dbg, reinterpret_cast<const uint8_t *>(recv_string.data()),
-                                            std::min(recv_string.size(), size_t{16})));
-
-        // Wait up to 500ms more, polling the UART, to see if extra bytes arrive late.
-        uint8_t extra[16];
-        size_t got = 0;
-        const uint32_t deadline = millis() + 500;
-        while (millis() < deadline && got < sizeof(extra)) {
+      // Some Nextion firmware variants (notably bootloader/recovery mode on panels
+      // with no installed TFT) emit the 5-byte 0x08+position fast-mode ack with a
+      // multi-second gap between the leading 0x08 byte and the 4 trailing position
+      // bytes. recv_ret_string_ returns after the first byte; manually drain the
+      // trailing bytes from the UART before continuing.
+      if (!recv_string.empty() && recv_string[0] == 0x08 && recv_string.size() < 5) {
+        const uint32_t deadline = millis() + NEXTION_UPLOAD_ACK_TIMEOUT_MS;
+        while (recv_string.size() < 5 && millis() < deadline) {
           if (this->available()) {
             uint8_t b = 0;
             if (this->read_byte(&b)) {
-              extra[got++] = b;
+              recv_string.push_back(static_cast<char>(b));
             }
           } else {
             vTaskDelay(pdMS_TO_TICKS(5));  // NOLINT
             App.feed_wdt();
           }
         }
-        if (got > 0) {
-          char hex_buf_extra[format_hex_pretty_size(16)];
-          ESP_LOGD(TAG, "UART late bytes after 500ms: [%zu] [%s]", got,
-                  format_hex_pretty_to(hex_buf_extra, extra, got));
-        } else {
-          ESP_LOGD(TAG, "UART late bytes after 500ms: NONE");
+        if (recv_string.size() < 5) {
+          ESP_LOGE(TAG, "Truncated 0x08 response: got %zu bytes within %" PRIu32 "ms",
+                  recv_string.size(), NEXTION_UPLOAD_ACK_TIMEOUT_MS);
+          allocator.deallocate(buffer, 4096);
+          buffer = nullptr;
+          return -1;
         }
       }
-      // === END DIAGNOSTIC ===
-
       this->content_length_ -= read_len;
       const float upload_percentage = 100.0f * (this->tft_size_ - this->content_length_) / this->tft_size_;
 #ifdef USE_PSRAM
@@ -156,19 +148,14 @@ int Nextion::upload_by_chunks_(esp_http_client_handle_t http_client, uint32_t &r
         buffer = nullptr;
         return -1;
       }
-      if (recv_string[0] == 0x08) {
+      if (recv_string[0] == 0x08 && recv_string.size() == 5) {  // handle partial upload request
+        char hex_buf[format_hex_pretty_size(NEXTION_MAX_RESPONSE_LOG_BYTES)];
+        ESP_LOGD(
+            TAG, "Recv: [%s]",
+            format_hex_pretty_to(hex_buf, reinterpret_cast<const uint8_t *>(recv_string.data()), recv_string.size()));
         uint32_t result = 0;
-        if (recv_string.size() == 5) {
-          // Spec-compliant 0x08 + 4-byte position
-          for (int j = 0; j < 4; ++j) {
-            result += static_cast<uint8_t>(recv_string[j + 1]) << (8 * j);
-          }
-        } else {
-          // Some firmware variants (notably bootloader/recovery on panels with no
-          // installed TFT) send a bare 0x08 byte instead of the full 5-byte packet.
-          // Treat this as "continue from next position", same as 0x08 00 00 00 00.
-          ESP_LOGD(TAG, "Bare 0x08 ack received (size=%zu); treating as continue", recv_string.size());
-          result = 0;
+        for (int j = 0; j < 4; ++j) {
+          result += static_cast<uint8_t>(recv_string[j + 1]) << (8 * j);
         }
         if (result > 0) {
           ESP_LOGI(TAG, "New range: %" PRIu32, result);
