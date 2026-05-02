@@ -156,14 +156,19 @@ int Nextion::upload_by_chunks_(esp_http_client_handle_t http_client, uint32_t &r
         buffer = nullptr;
         return -1;
       }
-      if (recv_string[0] == 0x08 && recv_string.size() == 5) {  // handle partial upload request
-        char hex_buf[format_hex_pretty_size(NEXTION_MAX_RESPONSE_LOG_BYTES)];
-        ESP_LOGD(
-            TAG, "Recv: [%s]",
-            format_hex_pretty_to(hex_buf, reinterpret_cast<const uint8_t *>(recv_string.data()), recv_string.size()));
+      if (recv_string[0] == 0x08) {
         uint32_t result = 0;
-        for (int j = 0; j < 4; ++j) {
-          result += static_cast<uint8_t>(recv_string[j + 1]) << (8 * j);
+        if (recv_string.size() == 5) {
+          // Spec-compliant 0x08 + 4-byte position
+          for (int j = 0; j < 4; ++j) {
+            result += static_cast<uint8_t>(recv_string[j + 1]) << (8 * j);
+          }
+        } else {
+          // Some firmware variants (notably bootloader/recovery on panels with no
+          // installed TFT) send a bare 0x08 byte instead of the full 5-byte packet.
+          // Treat this as "continue from next position", same as 0x08 00 00 00 00.
+          ESP_LOGD(TAG, "Bare 0x08 ack received (size=%zu); treating as continue", recv_string.size());
+          result = 0;
         }
         if (result > 0) {
           ESP_LOGI(TAG, "New range: %" PRIu32, result);
