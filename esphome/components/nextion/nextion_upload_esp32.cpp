@@ -104,6 +104,35 @@ int Nextion::upload_by_chunks_(esp_http_client_handle_t http_client, uint32_t &r
       this->write_array(buffer, buffer_size);
       App.feed_wdt();
       this->recv_ret_string_(recv_string, NEXTION_UPLOAD_ACK_TIMEOUT_MS, true);
+
+      // === BEGIN DIAGNOSTIC (remove before merge) ===
+      {
+        char hex_buf_dbg[format_hex_pretty_size(NEXTION_MAX_RESPONSE_LOG_BYTES)];
+        ESP_LOGD(TAG, "Display resp: [%zu bytes] [%s]", recv_string.size(),
+                recv_string.empty()
+                    ? "(empty)"
+                    : format_hex_pretty_to(hex_buf_dbg, reinterpret_cast<const uint8_t *>(recv_string.data()),
+                                            std::min(recv_string.size(), size_t{16})));
+        // Check whether more bytes are still pending in the UART RX buffer
+        // immediately after recv_ret_string_ returned.
+        const size_t pending = this->available();
+        ESP_LOGD(TAG, "UART pending after recv_ret_string_: %zu bytes", pending);
+        if (pending > 0 && pending <= 16) {
+          uint8_t extra[16];
+          size_t got = 0;
+          while (got < pending) {
+            uint8_t b = 0;
+            if (!this->read_byte(&b)) {
+              break;
+            }
+            extra[got++] = b;
+          }
+          char hex_buf_extra[format_hex_pretty_size(16)];
+          ESP_LOGD(TAG, "UART drained extra: [%zu bytes] [%s]", got,
+                  format_hex_pretty_to(hex_buf_extra, extra, got));
+        }
+      }
+      // === END DIAGNOSTIC ===
       this->content_length_ -= read_len;
       const float upload_percentage = 100.0f * (this->tft_size_ - this->content_length_) / this->tft_size_;
 #ifdef USE_PSRAM
